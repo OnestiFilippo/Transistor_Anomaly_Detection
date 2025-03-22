@@ -11,9 +11,9 @@ import time
 # TODO: 
 # 01. Load the dataset images (DONE)
 # 02. Preprocess the images (resize, normalize) (DONE)
-# 03. Create the generative model
-# 04. Create the discriminative model
-# 05. Train the GAN
+# 03. Create the generative model (DONE)
+# 04. Create the discriminative model (DONE)
+# 05. Train the GAN (DONE)
 # 06. Load the test images
 # 07. Preprocess the test images
 # 08. Generate images using the trained model
@@ -42,7 +42,7 @@ def load_images_from_folder(folder):
 
 # Load dataset
 X_train = load_images_from_folder(dataset_path)
-print(f"Dataset shape: {X_train.shape}")
+print(f"Original dataset shape: {X_train.shape}")
 
 # Visualize a random image
 im = random.randint(0, X_train.shape[0])
@@ -62,14 +62,19 @@ X_train = tf.image.resize(X_train, [128, 128])
 # Normalize the images
 X_train = X_train / 255.0
 
-print(f"Dataset shape: {X_train.shape}")
+print(f"Processed dataset shape: {X_train.shape}")
+
+# Turn into tf.data.Dataset
+X_train = tf.data.Dataset.from_tensor_slices(X_train).shuffle(60000).batch(256)
 
 # ---------------------- 03. Create the generative model ----------------------
+
 def make_generator_model():
     model = tf.keras.Sequential()
     model.add(layers.Dense(16*16*512, use_bias=False, input_shape=(100,)))
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
 
     model.add(layers.Reshape((16, 16, 512)))
     assert model.output_shape == (None, 16, 16, 512)  # Note: None is the batch size
@@ -78,16 +83,25 @@ def make_generator_model():
     assert model.output_shape == (None, 32, 32, 256)
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
 
     model.add(layers.Conv2DTranspose(128, (5, 5), strides=(2, 2), padding='same', use_bias=False))
     assert model.output_shape == (None, 64, 64, 128)
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
 
     model.add(layers.Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False))
     assert model.output_shape == (None, 128, 128, 64)
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+
+    model.add(layers.Conv2DTranspose(32, (5, 5), strides=(1, 1), padding='same', use_bias=False))
+    assert model.output_shape == (None, 128, 128, 32)
+    model.add(layers.BatchNormalization())
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
 
     model.add(layers.Conv2DTranspose(1, (5, 5), strides=(1, 1), padding='same', use_bias=False, activation='tanh'))
     assert model.output_shape == (None, 128, 128, 1)
@@ -104,8 +118,7 @@ generated_image = generator(noise, training=False)
 
 def make_discriminator_model():
     model = tf.keras.Sequential()
-    model.add(layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same',
-                                     input_shape=[128, 128, 1]))
+    model.add(layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same', input_shape=[128, 128, 1]))
     model.add(layers.LeakyReLU())
     model.add(layers.Dropout(0.3))
 
@@ -118,6 +131,10 @@ def make_discriminator_model():
     model.add(layers.Dropout(0.3))
 
     model.add(layers.Conv2D(512, (5, 5), strides=(2, 2), padding='same'))
+    model.add(layers.LeakyReLU())
+    model.add(layers.Dropout(0.3))
+
+    model.add(layers.Conv2D(1024, (5, 5), strides=(2, 2), padding='same'))
     model.add(layers.LeakyReLU())
     model.add(layers.Dropout(0.3))
 
@@ -190,8 +207,6 @@ def train(dataset, epochs):
   generate_and_save_images(generator,
                           epochs,
                           seed)
-# Turn into tf.data.Dataset
-X_train = tf.data.Dataset.from_tensor_slices(X_train).shuffle(60000).batch(256)
 
 def generate_and_save_images(model, epoch, test_input):
   # Notice `training` is set to False.
