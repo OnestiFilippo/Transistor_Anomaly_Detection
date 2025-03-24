@@ -26,7 +26,7 @@ os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
 
 # Select the mode
 # train, generate
-mode = 'train'
+mode = 'generate'
 
 # ---------------------- 01. Load the dataset images ----------------------
 
@@ -73,6 +73,7 @@ X_train = X_train / 255.0
 print(f"Processed dataset shape: {X_train.shape}")
 
 # Turn into tf.data.Dataset
+X_train_original = X_train
 X_train = tf.data.Dataset.from_tensor_slices(X_train).shuffle(60000).batch(256)
 
 # ---------------------- 03. Create the generative model ----------------------
@@ -81,11 +82,11 @@ def make_generator_model():
   model = tf.keras.Sequential()
 
   model.add(layers.Input(shape=(100,)))
-  model.add(layers.Dense(16 * 16 * 512, use_bias=False))
+  model.add(layers.Dense(8 * 8 * 512, use_bias=False))
   model.add(layers.BatchNormalization())
   model.add(layers.LeakyReLU())
 
-  model.add(layers.Reshape((16, 16, 512)))
+  model.add(layers.Reshape((8, 8, 512)))
 
   model.add(layers.Conv2DTranspose(256, (5, 5), strides=(2, 2), padding="same", use_bias=False))
   model.add(layers.BatchNormalization())
@@ -118,18 +119,18 @@ def make_discriminator_model():
   model = tf.keras.Sequential()
 
   model.add(layers.Input(shape=[128, 128, 1]))
-  model.add(layers.Conv2D(64, (3, 3), strides=(2, 2), padding='same'))
+  model.add(layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same'))
   model.add(layers.LeakyReLU(negative_slope=0.2))
 
-  model.add(layers.Conv2D(128, (3, 3), strides=(2, 2), padding='same'))
+  model.add(layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
   model.add(layers.BatchNormalization())
   model.add(layers.LeakyReLU(negative_slope=0.2))
 
-  model.add(layers.Conv2D(256, (3, 3), strides=(2, 2), padding='same'))
+  model.add(layers.Conv2D(256, (5, 5), strides=(2, 2), padding='same'))
   model.add(layers.BatchNormalization())
   model.add(layers.LeakyReLU(negative_slope=0.2))
 
-  model.add(layers.Conv2D(512, (3, 3), strides=(2, 2), padding='same'))
+  model.add(layers.Conv2D(512, (5, 5), strides=(2, 2), padding='same'))
   model.add(layers.BatchNormalization())
   model.add(layers.LeakyReLU(negative_slope=0.2))
 
@@ -286,8 +287,8 @@ if mode == 'train':
 
 elif mode == 'generate':
   # Load the model and generate images
-  generator = tf.keras.models.load_model('models/generator.keras')
-  discriminator = tf.keras.models.load_model('models/discriminator.keras')
+  generator = tf.keras.models.load_model('models/generator3k.keras')
+  discriminator = tf.keras.models.load_model('models/discriminator3k.keras')
 
   # Generate and save the images
   predictions = generate_and_save_images(generator, 0, seed, save=False)
@@ -299,3 +300,26 @@ elif mode == 'generate':
     plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
     plt.axis('off')
   plt.show()
+
+  # Get the generated image that is the most similar to the original images
+  min_diff = 1000
+  min_diff_img = None
+  rand_index = random.randint(0, X_train_original.shape[0])
+  for i in range(predictions.shape[0]):
+    diff = tf.reduce_mean(tf.abs(X_train_original[rand_index] - predictions[i]))
+    if diff < min_diff:
+      min_diff = diff
+      min_diff_img = predictions[i]
+
+  # Visualize the most similar image
+  plt.figure(figsize=(10, 5))
+  plt.subplot(1, 2, 1)
+  plt.imshow(X_train_original[rand_index], cmap='gray')
+  plt.title("Original image")
+  plt.axis('off')
+  plt.subplot(1, 2, 2)
+  plt.imshow(min_diff_img[:, :, 0] * 127.5 + 127.5, cmap='gray')
+  plt.title("Generated image with diff: " + str(round(min_diff.numpy(), 4)))
+  plt.axis('off')
+  plt.show()
+
