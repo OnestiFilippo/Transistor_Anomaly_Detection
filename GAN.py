@@ -214,7 +214,7 @@ def train(dataset, epochs):
         variance_list.append(np.var(diff_list[-100:]))
 
       # Stop training if the difference variance remain the same
-      if len(diff_list) > 200 and np.var(diff_list[-100:]) < 2e-07:
+      if len(diff_list) > 200 and np.var(diff_list[-100:]) < 1.5e-07:
         break
       
       # Save the model every 100 epochs
