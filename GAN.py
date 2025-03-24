@@ -24,6 +24,10 @@ os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
 # 10. Classify the generated images using the model trained in the previous task
 # 11. Evaluate the classification accuracy
 
+# Select the mode
+# train, generate
+mode = 'generate'
+
 # ---------------------- 01. Load the dataset images ----------------------
 
 # Load the images that are in the form of numpy arrays
@@ -230,37 +234,64 @@ def train(dataset, epochs):
   discriminator.save('models/discriminator.keras')
 
 # Generate and save the images
-def generate_and_save_images(model, epoch, test_input):
+def generate_and_save_images(model, epoch, test_input, save=True):
   # training is set to False so all layers run in inference mode.
   predictions = model(test_input, training=False)
 
-  fig = plt.figure(figsize=(4, 4))
+  if save == True:
+    fig = plt.figure(figsize=(4, 4))
 
+    for i in range(predictions.shape[0]):
+      plt.subplot(4, 4, i+1)
+      plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+      plt.axis('off')
+
+    plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
+    plt.close()
+
+  return predictions
+
+if mode == 'train':
+  print("START TRAINING ".center(100, "="))
+
+  # Train the GAN on the dataset
+  train(X_train, MAX_EPOCHS)
+
+  # Load the model and generate images
+  generator = tf.keras.models.load_model('models/generator5k.h5')
+  discriminator = tf.keras.models.load_model('models/discriminator5k.h5')
+
+  # Generate and save the images
+  generate_and_save_images(generator, 0, seed)
+
+  print("END TRAINING ".center(100, "="))
+
+  # Plot the difference between the real and fake images and the variance
+  plt.figure(figsize=(10, 5))
+  plt.subplot(1, 2, 1)
+  plt.plot(diff_list)
+  plt.title("Difference between real and fake images")
+  plt.xlabel("Epochs")
+  plt.ylabel("Difference")
+  plt.subplot(1, 2, 2)
+  plt.plot(variance_list)
+  plt.title("Variance of the difference")
+  plt.xlabel("Epochs")
+  plt.ylabel("Variance")
+  plt.show()
+
+elif mode == 'generate':
+  # Load the model and generate images
+  generator = tf.keras.models.load_model('models/generator.h5')
+  discriminator = tf.keras.models.load_model('models/discriminator.h5')
+
+  # Generate and save the images
+  predictions = generate_and_save_images(generator, 0, seed, save=False)
+
+  # Visualize the generated images
+  plt.figure(figsize=(10, 5))
   for i in range(predictions.shape[0]):
     plt.subplot(4, 4, i+1)
     plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
     plt.axis('off')
-
-  plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
-  plt.close()
-
-print("START TRAINING ".center(100, "="))
-
-# Train the GAN on the dataset
-train(X_train, MAX_EPOCHS)
-
-print("END TRAINING ".center(100, "="))
-
-# Plot the difference between the real and fake images and the variance
-plt.figure(figsize=(10, 5))
-plt.subplot(1, 2, 1)
-plt.plot(diff_list)
-plt.title("Difference between real and fake images")
-plt.xlabel("Epochs")
-plt.ylabel("Difference")
-plt.subplot(1, 2, 2)
-plt.plot(variance_list)
-plt.title("Variance of the difference")
-plt.xlabel("Epochs")
-plt.ylabel("Variance")
-plt.show()
+  plt.show()
