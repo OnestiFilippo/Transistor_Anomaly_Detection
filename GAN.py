@@ -146,8 +146,8 @@ def discriminator_loss(real_output, fake_output):
 def generator_loss(fake_output):
   return cross_entropy(tf.ones_like(fake_output), fake_output)
 
-generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001) #, beta_1=0.5, beta_2=0.999)
-discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
+generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0005)
+discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0005)
 
 # ---------------------- 05. Train the GAN ----------------------
 
@@ -159,6 +159,7 @@ BATCH_SIZE = X_train_len
 
 # List to store the difference between the real and fake images
 diff_list = []
+variance_list = []
 
 # Seed for the generator
 seed = tf.random.normal([num_examples_to_generate, noise_dim])
@@ -201,12 +202,15 @@ def train(dataset, epochs):
           generate_and_save_images(generator, epoch, seed)
     
       print ('Epoch {} - {} s - Diff: {}'.format(epoch + 1, str(round(time.time()-start,2)), str(round(diff.numpy(), 4))))
+      print(f"Variance: {np.var(diff_list[-100:])}")
       
       # Append the difference to the list
       diff_list.append(diff)
+      if epoch > 100:
+        variance_list.append(np.var(diff_list[-100:]))
 
-      # Stop training if the difference is less than 0.01
-      if diff < 0.01:
+      # Stop training if the difference variance remain the same
+      if len(diff_list) > 200 and np.var(diff_list[-100:]) < 2e-07:
         break
       
       # Save the model every 100 epochs
@@ -247,9 +251,16 @@ train(X_train, MAX_EPOCHS)
 
 print("END TRAINING ".center(100, "="))
 
-# Plot the difference between the real and fake images
+# Plot the difference between the real and fake images and the variance
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
 plt.plot(diff_list)
-plt.xlabel("Epoch")
-plt.ylabel("Difference")
 plt.title("Difference between real and fake images")
+plt.xlabel("Epochs")
+plt.ylabel("Difference")
+plt.subplot(1, 2, 2)
+plt.plot(variance_list)
+plt.title("Variance of the difference")
+plt.xlabel("Epochs")
+plt.ylabel("Variance")
 plt.show()
