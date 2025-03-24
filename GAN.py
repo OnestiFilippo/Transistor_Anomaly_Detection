@@ -219,8 +219,8 @@ def train(dataset, epochs):
       
       # Save the model every 100 epochs
       if (epoch + 1) % 100 == 0:
-        generator.save('models/generator.h5')
-        discriminator.save('models/discriminator.h5')
+        generator.save('models/generator.keras')
+        discriminator.save('models/discriminator.keras')
   
     # Stop training if KeyboardInterrupt
     except KeyboardInterrupt:
@@ -258,8 +258,8 @@ if mode == 'train':
   train(X_train, MAX_EPOCHS)
 
   # Load the model and generate images
-  generator = tf.keras.models.load_model('models/generator5k.h5')
-  discriminator = tf.keras.models.load_model('models/discriminator5k.h5')
+  generator = tf.keras.models.load_model('models/generator.keras')
+  discriminator = tf.keras.models.load_model('models/discriminator.keras')
 
   # Generate and save the images
   generate_and_save_images(generator, 0, seed)
@@ -282,8 +282,8 @@ if mode == 'train':
 
 elif mode == 'generate':
   # Load the model and generate images
-  generator = tf.keras.models.load_model('models/generator.h5')
-  discriminator = tf.keras.models.load_model('models/discriminator.h5')
+  generator = tf.keras.models.load_model('models/generator.keras')
+  discriminator = tf.keras.models.load_model('models/discriminator.keras')
 
   # Generate and save the images
   predictions = generate_and_save_images(generator, 0, seed, save=False)
