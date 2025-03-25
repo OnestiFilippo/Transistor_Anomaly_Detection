@@ -26,7 +26,7 @@ os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
 
 # Select the mode
 # train, generate
-mode = 'train'
+mode = 'generate'
 
 # ---------------------- 01. Load the dataset images ----------------------
 
@@ -108,14 +108,6 @@ def make_generator_model():
 
   return model
 
-generator = make_generator_model()
-
-print("GENERATOR MODEL:")
-print(generator.summary())
-
-noise = tf.random.normal([1, 100])
-generated_image = generator(noise, training=False)
-
 # ---------------------- 04. Create the discriminative model ----------------------
 
 def make_discriminator_model():
@@ -142,14 +134,6 @@ def make_discriminator_model():
 
   return model
 
-discriminator = make_discriminator_model()
-print("DISCRIMINATOR MODEL:")
-print(discriminator.summary())
-decision = discriminator(generated_image)
-
-# This method returns a helper function to compute cross entropy loss
-cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=False)
-
 # Discriminator loss with label smoothing
 def discriminator_loss(real_output, fake_output):
   real_loss = cross_entropy(tf.ones_like(real_output) * 0.9, real_output)
@@ -160,23 +144,7 @@ def discriminator_loss(real_output, fake_output):
 def generator_loss(fake_output):
   return cross_entropy(tf.ones_like(fake_output), fake_output)
 
-generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
-discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
-
 # ---------------------- 05. Train the GAN ----------------------
-
-MAX_EPOCHS = 3000
-noise_dim = 100 # Dimension of the noise vector
-num_examples_to_generate = 16 # Number of examples to generate
-BATCH_SIZE = X_train_len
-# Batch size for the training is the same as the batch size for the dataset
-
-# List to store the difference between the real and fake images
-diff_list = []
-variance_list = []
-
-# Seed for the generator
-seed = tf.random.normal([num_examples_to_generate, noise_dim])
 
 # Define the training step
 @tf.function
@@ -229,8 +197,8 @@ def train(dataset, epochs):
       
       # Save the model every 100 epochs
       if (epoch + 1) % 100 == 0:
-        generator.save('models/generator'+(epoch+1)+'.keras')
-        discriminator.save('models/discriminator'+(epoch+1)+'.keras')
+        generator.save('models/generator'+str(epoch+1)+'.keras')
+        discriminator.save('models/discriminator'+str(epoch+1)+'.keras')
   
     # Stop training if KeyboardInterrupt
     except KeyboardInterrupt:
@@ -262,6 +230,39 @@ def generate_and_save_images(model, epoch, test_input, save=True):
   return predictions
 
 if mode == 'train':
+  MAX_EPOCHS = 3000
+  noise_dim = 100 # Dimension of the noise vector
+  num_examples_to_generate = 16 # Number of examples to generate
+  BATCH_SIZE = X_train_len
+  # Batch size for the training is the same as the batch size for the dataset
+
+  # List to store the difference between the real and fake images
+  diff_list = []
+  variance_list = []
+
+  # Seed for the generator
+  seed = tf.random.normal([num_examples_to_generate, noise_dim])
+
+  generator = make_generator_model()
+
+  print("GENERATOR MODEL:")
+  print(generator.summary())
+
+  noise = tf.random.normal([1, 100])
+  generated_image = generator(noise, training=False)
+
+
+  discriminator = make_discriminator_model()
+  print("DISCRIMINATOR MODEL:")
+  print(discriminator.summary())
+  decision = discriminator(generated_image)
+
+  # This method returns a helper function to compute cross entropy loss
+  cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+
+  generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+  discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
+
   print("START TRAINING ".center(50, "="))
 
   # Train the GAN on the dataset
@@ -292,8 +293,14 @@ if mode == 'train':
 
 elif mode == 'generate':
   # Load the model and generate images
-  generator = tf.keras.models.load_model('models/generator3k.keras')
-  discriminator = tf.keras.models.load_model('models/discriminator3k.keras')
+  generator = tf.keras.models.load_model('models/generatorF.keras')
+  discriminator = tf.keras.models.load_model('models/discriminatorF.keras')
+
+  noise_dim = 100 # Dimension of the noise vector
+  num_examples_to_generate = 16 # Number of examples to generate
+
+  # Seed for the generator
+  seed = tf.random.normal([num_examples_to_generate, noise_dim])
 
   # Generate and save the images
   predictions = generate_and_save_images(generator, 0, seed, save=False)
