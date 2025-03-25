@@ -26,7 +26,7 @@ os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
 
 # Select the mode
 # train, generate
-mode = 'generate'
+mode = 'train'
 
 # ---------------------- 01. Load the dataset images ----------------------
 
@@ -155,8 +155,8 @@ def discriminator_loss(real_output, fake_output):
 def generator_loss(fake_output):
   return cross_entropy(tf.ones_like(fake_output), fake_output)
 
-generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0005)
-discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0005)
+generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
 
 # ---------------------- 05. Train the GAN ----------------------
 
@@ -209,9 +209,9 @@ def train(dataset, epochs):
         # Save an image every 100 epochs
         if epoch % 100 == 0:
           generate_and_save_images(generator, epoch, seed)
-    
-      print ('Epoch {} - {} s - Diff: {}'.format(epoch + 1, str(round(time.time()-start,2)), str(round(diff.numpy(), 4))))
-      print(f"Variance: {np.var(diff_list[-100:])}")
+
+        print ('Epoch {} - {} s - Diff: {}'.format(epoch, str(round(time.time()-start,2)), str(round(diff.numpy(), 4))))
+        print(f"Variance: {np.var(diff_list[-100:])}")
       
       # Append the difference to the list
       diff_list.append(diff)
@@ -224,8 +224,8 @@ def train(dataset, epochs):
       
       # Save the model every 100 epochs
       if (epoch + 1) % 100 == 0:
-        generator.save('models/generator.keras')
-        discriminator.save('models/discriminator.keras')
+        generator.save('models/generator'+(epoch+1)+'.keras')
+        discriminator.save('models/discriminator'+(epoch+1)+'.keras')
   
     # Stop training if KeyboardInterrupt
     except KeyboardInterrupt:
@@ -235,8 +235,8 @@ def train(dataset, epochs):
   generate_and_save_images(generator, epochs, seed)
 
   # Save the model
-  generator.save('models/generator.keras')
-  discriminator.save('models/discriminator.keras')
+  generator.save('models/generatorF.keras')
+  discriminator.save('models/discriminatorF.keras')
 
 # Generate and save the images
 def generate_and_save_images(model, epoch, test_input, save=True):
