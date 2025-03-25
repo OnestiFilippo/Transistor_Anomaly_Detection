@@ -110,6 +110,9 @@ def make_generator_model():
 
 generator = make_generator_model()
 
+print("GENERATOR MODEL:")
+print(generator.summary())
+
 noise = tf.random.normal([1, 100])
 generated_image = generator(noise, training=False)
 
@@ -140,6 +143,8 @@ def make_discriminator_model():
   return model
 
 discriminator = make_discriminator_model()
+print("DISCRIMINATOR MODEL:")
+print(discriminator.summary())
 decision = discriminator(generated_image)
 
 # This method returns a helper function to compute cross entropy loss
@@ -257,7 +262,7 @@ def generate_and_save_images(model, epoch, test_input, save=True):
   return predictions
 
 if mode == 'train':
-  print("START TRAINING ".center(100, "="))
+  print("START TRAINING ".center(50, "="))
 
   # Train the GAN on the dataset
   train(X_train, MAX_EPOCHS)
