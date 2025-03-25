@@ -229,109 +229,111 @@ def generate_and_save_images(model, epoch, test_input, save=True):
 
   return predictions
 
-if mode == 'train':
-  MAX_EPOCHS = 3000
-  noise_dim = 100 # Dimension of the noise vector
-  num_examples_to_generate = 16 # Number of examples to generate
-  BATCH_SIZE = X_train_len
-  # Batch size for the training is the same as the batch size for the dataset
+if __name__ == "__main__":
 
-  # List to store the difference between the real and fake images
-  diff_list = []
-  variance_list = []
+  if mode == 'train':
+    MAX_EPOCHS = 3000
+    noise_dim = 100 # Dimension of the noise vector
+    num_examples_to_generate = 16 # Number of examples to generate
+    BATCH_SIZE = X_train_len
+    # Batch size for the training is the same as the batch size for the dataset
 
-  # Seed for the generator
-  seed = tf.random.normal([num_examples_to_generate, noise_dim])
+    # List to store the difference between the real and fake images
+    diff_list = []
+    variance_list = []
 
-  generator = make_generator_model()
+    # Seed for the generator
+    seed = tf.random.normal([num_examples_to_generate, noise_dim])
 
-  print("GENERATOR MODEL:")
-  print(generator.summary())
+    generator = make_generator_model()
 
-  noise = tf.random.normal([1, 100])
-  generated_image = generator(noise, training=False)
+    print("GENERATOR MODEL:")
+    print(generator.summary())
+
+    noise = tf.random.normal([1, 100])
+    generated_image = generator(noise, training=False)
 
 
-  discriminator = make_discriminator_model()
-  print("DISCRIMINATOR MODEL:")
-  print(discriminator.summary())
-  decision = discriminator(generated_image)
+    discriminator = make_discriminator_model()
+    print("DISCRIMINATOR MODEL:")
+    print(discriminator.summary())
+    decision = discriminator(generated_image)
 
-  # This method returns a helper function to compute cross entropy loss
-  cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=False)
+    # This method returns a helper function to compute cross entropy loss
+    cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=False)
 
-  generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
-  discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
+    generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+    discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
 
-  print("START TRAINING ".center(50, "="))
+    print("START TRAINING ".center(50, "="))
 
-  # Train the GAN on the dataset
-  train(X_train, MAX_EPOCHS)
+    # Train the GAN on the dataset
+    train(X_train, MAX_EPOCHS)
 
-  # Load the model and generate images
-  generator = tf.keras.models.load_model('models/generator.keras')
-  discriminator = tf.keras.models.load_model('models/discriminator.keras')
+    # Load the model and generate images
+    generator = tf.keras.models.load_model('models/generator.keras')
+    discriminator = tf.keras.models.load_model('models/discriminator.keras')
 
-  # Generate and save the images
-  generate_and_save_images(generator, 0, seed)
+    # Generate and save the images
+    generate_and_save_images(generator, 0, seed)
 
-  print("END TRAINING ".center(100, "="))
+    print("END TRAINING ".center(100, "="))
 
-  # Plot the difference between the real and fake images and the variance
-  plt.figure(figsize=(10, 5))
-  plt.subplot(1, 2, 1)
-  plt.plot(diff_list)
-  plt.title("Difference between real and fake images")
-  plt.xlabel("Epochs")
-  plt.ylabel("Difference")
-  plt.subplot(1, 2, 2)
-  plt.plot(variance_list)
-  plt.title("Variance of the difference")
-  plt.xlabel("Epochs")
-  plt.ylabel("Variance")
-  plt.show()
+    # Plot the difference between the real and fake images and the variance
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(diff_list)
+    plt.title("Difference between real and fake images")
+    plt.xlabel("Epochs")
+    plt.ylabel("Difference")
+    plt.subplot(1, 2, 2)
+    plt.plot(variance_list)
+    plt.title("Variance of the difference")
+    plt.xlabel("Epochs")
+    plt.ylabel("Variance")
+    plt.show()
 
-elif mode == 'generate':
-  # Load the model and generate images
-  generator = tf.keras.models.load_model('models/generatorF.keras')
-  discriminator = tf.keras.models.load_model('models/discriminatorF.keras')
+  elif mode == 'generate':
+    # Load the model and generate images
+    generator = tf.keras.models.load_model('models/generator2000.keras')
+    discriminator = tf.keras.models.load_model('models/discriminator2000.keras')
 
-  noise_dim = 100 # Dimension of the noise vector
-  num_examples_to_generate = 16 # Number of examples to generate
+    noise_dim = 100 # Dimension of the noise vector
+    num_examples_to_generate = 16 # Number of examples to generate
 
-  # Seed for the generator
-  seed = tf.random.normal([num_examples_to_generate, noise_dim])
+    # Seed for the generator
+    seed = tf.random.normal([num_examples_to_generate, noise_dim])
 
-  # Generate and save the images
-  predictions = generate_and_save_images(generator, 0, seed, save=False)
+    # Generate and save the images
+    predictions = generate_and_save_images(generator, 0, seed, save=False)
 
-  # Visualize the generated images
-  plt.figure(figsize=(10, 5))
-  for i in range(predictions.shape[0]):
-    plt.subplot(4, 4, i+1)
-    plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+    # Visualize the generated images
+    plt.figure(figsize=(10, 5))
+    for i in range(predictions.shape[0]):
+      plt.subplot(4, 4, i+1)
+      plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+      plt.axis('off')
+    plt.show()
+
+    # Get the generated image that is the most similar to the original images
+    min_diff = 1000
+    min_diff_img = None
+    rand_index = random.randint(0, X_train_original.shape[0])
+    for i in range(predictions.shape[0]):
+      diff = tf.reduce_mean(tf.abs(X_train_original[rand_index] - predictions[i]))
+      if diff < min_diff:
+        min_diff = diff
+        min_diff_img = predictions[i]
+
+    # Visualize the most similar image
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.imshow(X_train_original[rand_index], cmap='gray')
+    plt.title("Original image")
     plt.axis('off')
-  plt.show()
-
-  # Get the generated image that is the most similar to the original images
-  min_diff = 1000
-  min_diff_img = None
-  rand_index = random.randint(0, X_train_original.shape[0])
-  for i in range(predictions.shape[0]):
-    diff = tf.reduce_mean(tf.abs(X_train_original[rand_index] - predictions[i]))
-    if diff < min_diff:
-      min_diff = diff
-      min_diff_img = predictions[i]
-
-  # Visualize the most similar image
-  plt.figure(figsize=(10, 5))
-  plt.subplot(1, 2, 1)
-  plt.imshow(X_train_original[rand_index], cmap='gray')
-  plt.title("Original image")
-  plt.axis('off')
-  plt.subplot(1, 2, 2)
-  plt.imshow(min_diff_img[:, :, 0] * 127.5 + 127.5, cmap='gray')
-  plt.title("Generated image with diff: " + str(round(min_diff.numpy(), 4)))
-  plt.axis('off')
-  plt.show()
+    plt.subplot(1, 2, 2)
+    plt.imshow(min_diff_img[:, :, 0] * 127.5 + 127.5, cmap='gray')
+    plt.title("Generated image with diff: " + str(round(min_diff.numpy(), 4)))
+    plt.axis('off')
+    plt.show()
 
