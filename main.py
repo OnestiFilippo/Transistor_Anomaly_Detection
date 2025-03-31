@@ -1,22 +1,43 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Imposta il livello di log su ERROR
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Evita conflitti di librerie
-os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
-from gan import train_gan
+from gan import train_gan, make_discriminator_model, make_generator_model
 from generate import generate
 from load_images import load_images
+
+# TODO: 
+# 01. Load and preprocess the dataset images (DONE)
+# 02. Create the generative and discriminative model (DONE)
+# 03. Train the GAN (DONE)
+# 04. Load the test images
+# 05. Preprocess the test images
+# 06. Generate images using the trained model
+# 07. Compare generated images with the test images
+# 08. Classify the generated images using the model trained in the previous task
+# 09. Evaluate the classification accuracy
 
 mode = 'generate' # 'train' or 'generate'
 
 if __name__ == "__main__":
 
+  # ---------------------- 01. Load and preprocess the dataset the images ----------------------
+
   X_train, X_train_original = load_images()
-
   X_train_len = X_train_original.shape[0]
-
-  # ---------------------- 03. Create the models and train the GAN ----------------------
+  
   if mode == 'train':
-    train_gan(X_train, max_epochs=5000, batch_size=X_train_len)
+    # ---------------------- 02. Create the generative and discriminative models ----------------------
+
+    # Create the generator model
+    generator = make_generator_model()
+    print("GENERATOR MODEL:")
+    print(generator.summary())
+
+    # Create the discriminator model
+    discriminator = make_discriminator_model()
+    print("DISCRIMINATOR MODEL:")
+    print(discriminator.summary())
+
+    # ---------------------- 03. Train the GAN ----------------------
+
+    train_gan(X_train, 5000, X_train_len, generator, discriminator)
 
   elif mode == 'generate':
-    generate(X_train_original)
+    generate(X_train_original, 'models/generator3300.keras', 'models/discriminator3300.keras')

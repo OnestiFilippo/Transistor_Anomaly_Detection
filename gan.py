@@ -10,25 +10,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Imposta il livello di log su ERROR
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Evita conflitti di librerie
 os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
 
-
-# TODO: 
-# 01. Load the dataset images (DONE)
-# 02. Preprocess the images (resize, normalize) (DONE)
-# 03. Create the generative model (DONE)
-# 04. Create the discriminative model (DONE)
-# 05. Train the GAN to obtain 16 images (DONE)
-# 06. Load the test images
-# 07. Preprocess the test images
-# 08. Generate images using the trained model
-# 09. Compare generated images with the test images
-# 10. Classify the generated images using the model trained in the previous task
-# 11. Evaluate the classification accuracy
-
-# Select the mode
-# train, generate
-
-# ---------------------- 03. Create the generative model ----------------------
-
+# Function to create the generator model
 def make_generator_model():
   model = tf.keras.Sequential()
 
@@ -63,8 +45,7 @@ def make_generator_model():
 
   return model
 
-# ---------------------- 04. Create the discriminative model ----------------------
-
+# Function to create the discriminator model
 def make_discriminator_model():
   model = tf.keras.Sequential()
 
@@ -103,19 +84,20 @@ def discriminator_loss(real_output, fake_output):
   total_loss = real_loss + fake_loss
   return total_loss
 
+# Generator loss
 def generator_loss(fake_output):
   # This method returns a helper function to compute cross entropy loss
   cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=False)
 
   return cross_entropy(tf.ones_like(fake_output), fake_output)
 
-# ---------------------- 05. Train the GAN ----------------------
-
 # Define the training step
 @tf.function
 def train_step(BATCH_SIZE, noise_dim, generator, discriminator, generator_optimizer, discriminator_optimizer, images):
   noise = tf.random.normal([BATCH_SIZE, noise_dim])
 
+  # Gradient tape is used to record the gradients of the loss with respect to the model parameters
+  # The gradients are then used to update the model parameters
   with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
     generated_images = generator(noise, training=True)
 
@@ -133,13 +115,12 @@ def train_step(BATCH_SIZE, noise_dim, generator, discriminator, generator_optimi
 
   # Calculate the difference between the real and fake images
   diff = tf.reduce_mean(tf.abs(images - generated_images))
-
+  
   # Calculate the difference between the real and fake images with SSIM
   images_scaled = tf.cast(images * 255, tf.uint8)
   generated_images_scaled = tf.cast(generated_images * 255, tf.uint8)
-
   ssim_value = tf.reduce_mean(tf.image.ssim(images_scaled, generated_images_scaled, max_val=255))
-
+  
   return diff, ssim_value
 
 # Train the GAN
@@ -147,6 +128,17 @@ def train(dataset, epochs, generator, discriminator, seed, BATCH_SIZE, noise_dim
   # List to store the difference between the real and fake images
   diff_list = []
   variance_list = []
+  ssim_list = []
+
+  plt.ion()  # Modalità interattiva
+  fig, ax = plt.subplots()
+  ax.set_title("Difference between real and fake images")
+  ax.set_xlabel("Epochs")
+  ax.set_ylabel("Difference")
+  ax.set_xlim(0, epochs)
+  ax.set_ylim(0, 1)
+  line1, = ax.plot([], [], 'r-')  # Linea rossa
+  line2, = ax.plot([], [], 'b-')  # Linea blu
 
   for epoch in range(epochs):
     try:
@@ -161,11 +153,12 @@ def train(dataset, epochs, generator, discriminator, seed, BATCH_SIZE, noise_dim
 
         print('Epoch {} - {} s'.format(epoch, str(round(time.time()-start,2))))
         print(f"Diff: {str(round(diff.numpy(), 4))}")
-        print(f"SSIM Percentage: {ssim_value.numpy() * 100:.2f}%")
+        print(f"SSIM: {str(round(ssim_value.numpy() * 100, 4))}%")
         print(f"Variance: {np.var(diff_list[-100:])}")
       
       # Append the difference to the list
       diff_list.append(diff)
+      ssim_list.append(ssim_value)
       if epoch > 100:
         variance_list.append(np.var(diff_list[-100:]))
 
@@ -178,10 +171,30 @@ def train(dataset, epochs, generator, discriminator, seed, BATCH_SIZE, noise_dim
       if (epoch + 1) % 100 == 0:
         generator.save('models/generator'+str(epoch+1)+'.keras')
         discriminator.save('models/discriminator'+str(epoch+1)+'.keras')
-  
+
+      # Stop training if the model reaches ssim threshold
+      if ssim_value > 80:
+        print("Early stopping: SSIM threshold reached.")
+        break
+
+      # Real time plotting
+      line1.set_xdata(np.arange(len(diff_list)))
+      line1.set_ydata(diff_list)
+      line2.set_xdata(np.arange(len(ssim_list)))
+      line2.set_ydata(ssim_list)
+      ax.relim()  # Aggiorna i limiti degli assi
+      ax.autoscale_view()  # Ridimensiona gli assi
+      # Aggiorna il grafico
+      plt.draw()  # Disegna il nuovo grafico
+      plt.pause(0.05)  # Attendi un po' per simulare dati in tempo reale
+    
     # Stop training if KeyboardInterrupt
     except KeyboardInterrupt:
       break
+
+  plt.ioff()  # Disattiva la modalità interattiva
+  # Mostra il grafico finale
+  plt.show()
 
   # Generate after the final epoch
   generate_and_save_images(generator, epochs, seed)
@@ -190,7 +203,7 @@ def train(dataset, epochs, generator, discriminator, seed, BATCH_SIZE, noise_dim
   generator.save('models/generatorF.keras')
   discriminator.save('models/discriminatorF.keras')
 
-  return diff_list, variance_list
+  return diff_list, variance_list, ssim_list
 
 # Generate and save the images
 def generate_and_save_images(model, epoch, test_input, save=True):
@@ -211,27 +224,12 @@ def generate_and_save_images(model, epoch, test_input, save=True):
   return predictions
 
 # Function to create the models and train the GAN
-def train_gan(X_train, max_epochs, batch_size):
+def train_gan(X_train, max_epochs, batch_size, generator, discriminator):
     noise_dim = 100 # Dimension of the noise vector
     num_examples_to_generate = 16 # Number of examples to generate
 
     # Seed for the generator
     seed = tf.random.normal([num_examples_to_generate, noise_dim])
-
-    # Create the generator model
-    generator = make_generator_model()
-
-    print("GENERATOR MODEL:")
-    print(generator.summary())
-
-    noise = tf.random.normal([1, 100])
-    generated_image = generator(noise, training=False)
-
-    # Create the discriminator model
-    discriminator = make_discriminator_model()
-    print("DISCRIMINATOR MODEL:")
-    print(discriminator.summary())
-    decision = discriminator(generated_image)
 
     generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002)
     discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0002)
@@ -246,11 +244,10 @@ def train_gan(X_train, max_epochs, batch_size):
     print("Resuming training from the last checkpoint...")
     """
     
-    
     print("START TRAINING ".center(50, "="))
 
     # Train the GAN on the dataset
-    diff_list, variance_list = train(X_train, max_epochs, generator, discriminator, seed, batch_size, noise_dim, generator_optimizer, discriminator_optimizer)
+    diff_list, variance_list, ssim_list = train(X_train, max_epochs, generator, discriminator, seed, batch_size, noise_dim, generator_optimizer, discriminator_optimizer)
 
     print("END TRAINING ".center(50, "="))
 
@@ -262,9 +259,11 @@ def train_gan(X_train, max_epochs, batch_size):
     generate_and_save_images(generator, 0, seed)
 
     # Plot the difference between the real and fake images and the variance
+    # Plot in real time the difference between the real and fake images
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
-    plt.plot(diff_list)
+    plt.plot(diff_list, label='Difference', color='blue')
+    plt.plot(ssim_list, label='SSIM', color='red')   
     plt.title("Difference between real and fake images")
     plt.xlabel("Epochs")
     plt.ylabel("Difference")

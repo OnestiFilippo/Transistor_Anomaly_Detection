@@ -10,9 +10,9 @@ os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
 from gan import generate_and_save_images
 
 # Load the model and generate images
-def generate(X_train_original):
-    generator = tf.keras.models.load_model('models/generator2000.keras')
-    discriminator = tf.keras.models.load_model('models/discriminator2000.keras')
+def generate(X_train_original, generator_file, discriminator_file):
+    generator = tf.keras.models.load_model(generator_file)
+    discriminator = tf.keras.models.load_model(discriminator_file)
 
     noise_dim = 100 # Dimension of the noise vector
     num_examples_to_generate = 16 # Number of examples to generate
@@ -36,19 +36,13 @@ def generate(X_train_original):
     min_diff_img = None
     rand_index = random.randint(0, X_train_original.shape[0] - 1)
     for i in range(predictions.shape[0]):
-      #original = X_train_original[rand_index, :, :, 0].numpy()
-      #generated = predictions[i, :, :, 0].numpy()
-      # Rescale to [0, 255]
-      #original = (original * 255).astype(np.uint8)
-      #generated = (generated * 255).astype(np.uint8)
-
       # Compute SSIM between the two images
       score = tf.image.ssim(X_train_original[rand_index], predictions[i], max_val=1.0).numpy()
       if score > min_diff:  # Higher SSIM indicates more similarity
         min_diff = score
         min_diff_img = predictions[i]
 
-    min_diff = round(min_diff * 100,4)  # Convert to percentage
+    min_diff = round(min_diff * 100, 4)  # Convert to percentage
     print(f"Most similar image SSIM: "+ str(min_diff) + "%")
 
     # Save the original image in a file using matplotlib
