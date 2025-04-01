@@ -50,21 +50,22 @@ def make_discriminator_model():
   model = tf.keras.Sequential()
 
   model.add(layers.Input(shape=[128, 128, 1]))
-  model.add(tf.keras.layers.SpectralNormalization(layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same')))
-  model.add(layers.Dropout(0.3))
-  model.add(layers.LeakyReLU(negative_slope=0.2))
-
-  model.add(tf.keras.layers.SpectralNormalization(layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same')))
+  model.add(layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same'))
   model.add(layers.BatchNormalization())
   model.add(layers.Dropout(0.3))
   model.add(layers.LeakyReLU(negative_slope=0.2))
 
-  model.add(tf.keras.layers.SpectralNormalization(layers.Conv2D(256, (5, 5), strides=(2, 2), padding='same')))
+  model.add(layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
   model.add(layers.BatchNormalization())
   model.add(layers.Dropout(0.3))
   model.add(layers.LeakyReLU(negative_slope=0.2))
 
-  model.add(tf.keras.layers.SpectralNormalization(layers.Conv2D(512, (5, 5), strides=(2, 2), padding='same')))
+  model.add(layers.Conv2D(256, (5, 5), strides=(2, 2), padding='same'))
+  model.add(layers.BatchNormalization())
+  model.add(layers.Dropout(0.3))
+  model.add(layers.LeakyReLU(negative_slope=0.2))
+
+  model.add(layers.Conv2D(512, (5, 5), strides=(2, 2), padding='same'))
   model.add(layers.BatchNormalization())
   model.add(layers.Dropout(0.3))
   model.add(layers.LeakyReLU(negative_slope=0.2))

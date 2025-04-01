@@ -13,7 +13,7 @@ from load_images import load_images
 # 08. Classify the generated images using the model trained in the previous task
 # 09. Evaluate the classification accuracy
 
-mode = 'generate' # 'train' or 'generate'
+mode = 'train' # 'train' or 'generate'
 
 if __name__ == "__main__":
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     # ---------------------- 03. Train the GAN ----------------------
 
-    train_gan(X_train, 5000, X_train_len, generator, discriminator)
+    train_gan(X_train, 10000, X_train_len, generator, discriminator)
 
   elif mode == 'generate':
     generate(X_train_original, 'models/generator3300.keras', 'models/discriminator3300.keras')
