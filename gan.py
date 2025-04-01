@@ -273,4 +273,7 @@ def train_gan(X_train, max_epochs, batch_size, generator, discriminator):
     plt.title("Variance of the difference")
     plt.xlabel("Epochs")
     plt.ylabel("Variance")
+    # Save the plot
+    plt.savefig('images/difference.png')
+    # Show the plot
     plt.show()
