@@ -231,8 +231,8 @@ def train_gan(X_train, max_epochs, batch_size, generator, discriminator):
     # Seed for the generator
     seed = tf.random.normal([num_examples_to_generate, noise_dim])
 
-    generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002)
-    discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0002)
+    generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
+    discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
 
     """
     # Resume training from the last checkpoint
