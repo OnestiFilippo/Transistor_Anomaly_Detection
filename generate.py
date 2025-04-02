@@ -49,9 +49,10 @@ def generate(X_train_original, generator_file, discriminator_file):
     print(f"Most similar image SSIM: "+ str(min_diff) + "%")
 
     # Save the original image in a file using matplotlib
-    plt.imsave('generated/original.png', X_train_original[min_index, :, :, 0] * 127.5 + 127.5, cmap='gray')
+    #plt.imsave('generated/original.png', X_train_original[min_index, :, :, 0] * 127.5 + 127.5, cmap='gray')
     # Save the generated image in a file using matplotlib
-    plt.imsave('generated/generated.png', min_diff_img[:, :, 0] * 127.5 + 127.5, cmap='gray')
+    for i in range(predictions.shape[0]):
+      plt.imsave('generated/generated_' + str(i) + '.png', predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
 
     # Visualize the most similar image
     plt.figure(figsize=(10, 5))
