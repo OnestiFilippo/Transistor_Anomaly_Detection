@@ -20,8 +20,6 @@ def generate_and_save_images(model, epoch, test_input, save=True):
       plt.subplot(4, 4, i+1)
       plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
       plt.axis('off')
-
-    plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
     plt.close()
 
   return predictions
@@ -46,7 +44,6 @@ def generate(X_train_original, generator_file):
       plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
       plt.axis('off')
     plt.show()
-
 
     # Get the generated image that is the most similar to the original images using SSIM
     min_diff = -1  # SSIM ranges from -1 to 1, initialize with the lowest possible value
