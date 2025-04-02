@@ -40,4 +40,4 @@ if __name__ == "__main__":
     train_gan(X_train, 10000, X_train_len, generator, discriminator)
 
   elif mode == 'generate':
-    generate(X_train_original, 'models/generatorF.keras', 'models/discriminatorF.keras')
+    generate(X_train_original, 'models/generatorF.keras')

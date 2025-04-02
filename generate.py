@@ -7,12 +7,28 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Imposta il livello di log su ERROR
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Evita conflitti di librerie
 os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
-from gan import generate_and_save_images
+
+# Generate and save the images
+def generate_and_save_images(model, epoch, test_input, save=True):
+  # training is set to False so all layers run in inference mode.
+  predictions = model(test_input, training=False)
+
+  if save == True:
+    fig = plt.figure(figsize=(4, 4))
+
+    for i in range(predictions.shape[0]):
+      plt.subplot(4, 4, i+1)
+      plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+      plt.axis('off')
+
+    plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
+    plt.close()
+
+  return predictions
 
 # Load the model and generate images
-def generate(X_train_original, generator_file, discriminator_file):
+def generate(X_train_original, generator_file):
     generator = tf.keras.models.load_model(generator_file)
-    discriminator = tf.keras.models.load_model(discriminator_file)
 
     noise_dim = 100 # Dimension of the noise vector
     num_examples_to_generate = 16 # Number of examples to generate
@@ -30,6 +46,7 @@ def generate(X_train_original, generator_file, discriminator_file):
       plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
       plt.axis('off')
     plt.show()
+
 
     # Get the generated image that is the most similar to the original images using SSIM
     min_diff = -1  # SSIM ranges from -1 to 1, initialize with the lowest possible value
