@@ -49,10 +49,27 @@ def get_final_mask(test):
     return best_image, final_mask
     
 if __name__ == "__main__":
-    path = 'transistor/test/bent_lead/'
-    for test_im_file in os.listdir(path):
+    path = 'transistor/test/'
+
+    # Create a list with all the test images
+    test_images = []
+    for dir in os.listdir(path):
+        if os.path.isdir(path + dir):
+            print('Directory:', path + dir)
+            for im in os.listdir(path + dir):
+                print('Image:', path+ dir + '/' + im)
+                if im.endswith('.png'):
+                    test_images.append(path+dir+'/'+im)
+    
+    # Shuffle the test images
+    np.random.shuffle(test_images)
+
+    print('Number of test images:', len(test_images))
+    #print(test_images)
+
+    for test_im_file in test_images:
         # Load the test image
-        test_im = cv2.imread(path + test_im_file)
+        test_im = cv2.imread(test_im_file)
         test_im = cv2.resize(test_im, (128, 128))
         test_im = cv2.cvtColor(test_im, cv2.COLOR_BGR2GRAY)   
         # Get the final mask
@@ -63,23 +80,25 @@ if __name__ == "__main__":
         best_score = 0
         best_mask = None
         for subdir in os.listdir('transistor/ground_truth/'):
-            for truth_file in os.listdir('transistor/ground_truth/'+subdir):
-                ground_truth_mask = cv2.imread('transistor/ground_truth/' + subdir+'/' + truth_file)
-                ground_truth_mask = cv2.resize(ground_truth_mask, (128, 128))
-                ground_truth_mask = cv2.cvtColor(ground_truth_mask, cv2.COLOR_BGR2GRAY)
+            if os.path.isdir('transistor/ground_truth/'+subdir):
+                for truth_file in os.listdir('transistor/ground_truth/'+subdir):
+                    if truth_file.endswith('.png'):
+                        ground_truth_mask = cv2.imread('transistor/ground_truth/' + subdir+'/' + truth_file)
+                        ground_truth_mask = cv2.resize(ground_truth_mask, (128, 128))
+                        ground_truth_mask = cv2.cvtColor(ground_truth_mask, cv2.COLOR_BGR2GRAY)
 
-                # Compare the final mask with the ground truth mask
-                # Compute SSIM between the two images
-                (score, diff) = structural_similarity(ground_truth_mask, final_mask, full=True)
-                #print("Image Similarity: {:.4f}%".format(score * 100))
-                # If the score is better than the best score, update the best score
-                if score > best_score:
-                    best_score = score
-                    best_mask = ground_truth_mask
-                    best_subdir = subdir
+                        # Compare the final mask with the ground truth mask
+                        # Compute SSIM between the two images
+                        (score, diff) = structural_similarity(ground_truth_mask, final_mask, full=True)
+                        #print("Image Similarity: {:.4f}%".format(score * 100))
+                        # If the score is better than the best score, update the best score
+                        if score > best_score:
+                            best_score = score
+                            best_mask = ground_truth_mask
+                            best_subdir = subdir
 
         # Show the final mask
-        print('Class:', best_subdir)
+        print('Class:' + best_subdir + ' - Score: {:.4f}%'.format(best_score * 100))
         cv2.imshow('Test Image', test_im)
         cv2.imshow('Best Generated Image', best_image)
         cv2.imshow('Mask', final_mask)
