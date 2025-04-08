@@ -63,7 +63,7 @@ if __name__ == "__main__":
     
     # Shuffle the test images
     np.random.shuffle(test_images)
-
+ 
     print('Number of test images:', len(test_images))
     #print(test_images)
 
