@@ -24,20 +24,40 @@ def generate_and_save_images(model, epoch, test_input, save=True):
 
   return predictions
 
+# Visualize the generated images
+def visualize_generated_images():
+    plt.figure(figsize=(10, 10))
+    for i in range(16):
+      image = plt.imread('generated/generated_' + str(i) + '.png')
+      plt.subplot(4, 4, i+1)
+      plt.imshow(image, cmap='gray')
+      plt.axis('off')
+    plt.show()
+
 # Load the model and generate images
-def generate(X_train_original, generator_file):
+def generate(generator_file, num_images_to_generate):
     generator = tf.keras.models.load_model(generator_file)
 
-    noise_dim = 100 # Dimension of the noise vector
-    num_examples_to_generate = 16 # Number of examples to generate
+    for i in range(int(num_images_to_generate / 16)):
+      noise_dim = 100 # Dimension of the noise vector
+      num_examples_to_generate = 16 # Number of examples to generate
 
-    # Seed for the generator
-    seed = tf.random.normal([num_examples_to_generate, noise_dim])
+      # Seed for the generator
+      seed = tf.random.normal([num_examples_to_generate, noise_dim])
 
-    # Generate and save the images
-    predictions = generate_and_save_images(generator, 0, seed, save=False)
+      # Generate and save the images
+      predictions = generate_and_save_images(generator, 0, seed, save=False)
 
+      # Save the original image in a file using matplotlib
+      #plt.imsave('generated/original.png', X_train_original[min_index, :, :, 0] * 127.5 + 127.5, cmap='gray')
+      # Save the generated images in a file using matplotlib
+      for j in range(predictions.shape[0]):
+        plt.imsave('generated/generated_' + str(j+i*16) + '.png', predictions[j, :, :, 0] * 127.5 + 127.5, cmap='gray')
+    
     # Visualize the generated images
+    visualize_generated_images()
+
+    """# Visualize the generated images
     plt.figure(figsize=(10, 5))
     for i in range(predictions.shape[0]):
       plt.subplot(4, 4, i+1)
@@ -58,15 +78,8 @@ def generate(X_train_original, generator_file):
           min_diff_img = predictions[i]
           min_index = j
 
-
     min_diff = round(min_diff * 100, 4)  # Convert to percentage
     print(f"Most similar image SSIM: "+ str(min_diff) + "%")
-
-    # Save the original image in a file using matplotlib
-    #plt.imsave('generated/original.png', X_train_original[min_index, :, :, 0] * 127.5 + 127.5, cmap='gray')
-    # Save the generated image in a file using matplotlib
-    for i in range(predictions.shape[0]):
-      plt.imsave('generated/generated_' + str(i) + '.png', predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
 
     # Visualize the most similar image
     plt.figure(figsize=(10, 5))
@@ -78,4 +91,4 @@ def generate(X_train_original, generator_file):
     plt.imshow(min_diff_img[:, :, 0] * 127.5 + 127.5, cmap='gray')
     plt.title("Generated image with similarity: " + str(min_diff) + "%")
     plt.axis('off')
-    plt.show()
+    plt.show()"""

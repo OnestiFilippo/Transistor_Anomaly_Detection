@@ -1,19 +1,20 @@
 from gan import train_gan, make_discriminator_model, make_generator_model
 from generate import generate
 from load_images import load_images
+from differences import differences
 
 # TODO: 
 # 01. Load and preprocess the dataset images (DONE)
 # 02. Create the generative and discriminative model (DONE)
 # 03. Train the GAN (DONE)
-# 04. Load the test images
-# 05. Preprocess the test images
-# 06. Generate images using the trained model
-# 07. Compare generated images with the test images
+# 04. Generate images using the trained model (DONE)
+# 05. Load the test images (DONE)
+# 06. Preprocess the test images (DONE)
+# 07. Compare generated images with the test images (DONE)
 # 08. Classify the generated images using the model trained in the previous task
 # 09. Evaluate the classification accuracy
 
-mode = 'generate' # 'train' or 'generate'
+mode = 'differences' # 'train', 'generate' or 'differences'
 
 if __name__ == "__main__":
 
@@ -40,4 +41,9 @@ if __name__ == "__main__":
     train_gan(X_train, 10000, X_train_len, generator, discriminator)
 
   elif mode == 'generate':
-    generate(X_train_original, 'models/generatorF.keras')
+    # ---------------------- 04. Generate images using the trained model ----------------------
+    generate('models/generatorF.keras',96)
+
+  elif mode == 'differences':
+    differences()
+
