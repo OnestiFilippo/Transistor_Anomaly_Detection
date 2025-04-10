@@ -1,7 +1,7 @@
-from gan import train_gan, make_discriminator_model, make_generator_model
+from train import train_gan, make_discriminator_model, make_generator_model
 from generate import generate
 from load_images import load_images
-from differences import differences
+from differences1 import differences
 
 # TODO: 
 # 01. Load and preprocess the dataset images (DONE)
@@ -18,12 +18,12 @@ mode = 'differences' # 'train', 'generate' or 'differences'
 
 if __name__ == "__main__":
 
-  # ---------------------- 01. Load and preprocess the dataset the images ----------------------
-
-  X_train, X_train_original = load_images()
-  X_train_len = X_train_original.shape[0]
-  
   if mode == 'train':
+    # ---------------------- 01. Load and preprocess the dataset the images ----------------------
+
+    X_train, X_train_original = load_images()
+    X_train_len = X_train_original.shape[0]
+
     # ---------------------- 02. Create the generative and discriminative models ----------------------
 
     # Create the generator model
@@ -42,8 +42,10 @@ if __name__ == "__main__":
 
   elif mode == 'generate':
     # ---------------------- 04. Generate images using the trained model ----------------------
-    generate('models/generatorF.keras',96)
+    generate('models/generatorF.keras', 96)
 
   elif mode == 'differences':
+    # ---------------------- 07. Compare generated images with the test images ----------------------
+  
     differences()
 

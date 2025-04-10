@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 import os
-#from tensorflow import image as tf
+import tensorflow as tf
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications.vgg16 import preprocess_input
 from skimage.metrics import structural_similarity as ssim
 
 def get_final_mask(test):
@@ -77,8 +79,16 @@ def differences():
         test_im = cv2.imread(test_im_file)
         test_im = cv2.resize(test_im, (128, 128))
         test_im = cv2.cvtColor(test_im, cv2.COLOR_BGR2GRAY)   
+        
         # Get the final mask
         best_image, final_mask = get_final_mask(test_im)
+        
+        # Calculate VGG16 feature difference map
+        diff_map = get_feature_difference_map(test_im, best_image)
+        diff_map = diff_map.squeeze()
+        #diff_map = cv2.cvtColor(diff_map, cv2.COLOR_BGR2GRAY)
+
+
         # Compare the final mask with the ground truth mask
         # Load the ground truth mask from the folder transistor/ground_truth/
         best_score = 0
@@ -112,7 +122,42 @@ def differences():
         cv2.imshow('Test Image', test_im)
         cv2.imshow('Best Generated Image', best_image)
         cv2.imshow('Mask', final_mask)
+        cv2.imshow('VGG16 Diff Map', diff_map.squeeze())
         cv2.imshow('Ground Truth', best_mask)
         # if ESC is pressed, exit the loop
         if cv2.waitKey(0) & 0xFF == 27:
             break
+
+def get_feature_difference_map(img1, img2):
+    # Ensure both images are 128x128x3
+    img1_rgb = cv2.cvtColor(img1, cv2.COLOR_GRAY2BGR)
+    img2_rgb = cv2.cvtColor(img2, cv2.COLOR_GRAY2BGR)
+
+    img1_rgb = cv2.resize(img1_rgb, (128, 128))
+    img2_rgb = cv2.resize(img2_rgb, (128, 128))
+
+    img1_rgb = preprocess_input(img1_rgb.astype(np.float32))
+    img2_rgb = preprocess_input(img2_rgb.astype(np.float32))
+
+    base_model = VGG16(include_top=False, weights='imagenet', input_shape=(128, 128, 3))
+    layer_names = ['block1_conv2', 'block2_conv2', 'block3_conv3']
+    outputs = [base_model.get_layer(name).output for name in layer_names]
+    feature_extractor = tf.keras.Model(inputs=base_model.input, outputs=outputs)
+
+    img1_tensor = tf.convert_to_tensor(np.expand_dims(img1_rgb, axis=0))
+    img2_tensor = tf.convert_to_tensor(np.expand_dims(img2_rgb, axis=0))
+
+    features1 = feature_extractor(img1_tensor)
+    features2 = feature_extractor(img2_tensor)
+
+    diff_maps = []
+    for f1, f2 in zip(features1, features2):
+        diff = tf.reduce_mean(tf.square(f1 - f2), axis=-1, keepdims=True)
+        diff = tf.image.resize(diff, [128, 128])
+        diff_maps.append(diff)
+
+    final_diff_map = tf.reduce_mean(tf.concat(diff_maps, axis=-1), axis=-1)
+    final_diff_map = (final_diff_map - tf.reduce_min(final_diff_map)) / (tf.reduce_max(final_diff_map) - tf.reduce_min(final_diff_map))
+
+    diff_map_np = (final_diff_map.numpy() * 255).astype(np.uint8)
+    return diff_map_np
