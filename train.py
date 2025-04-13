@@ -207,20 +207,18 @@ def train(dataset, epochs, generator, discriminator, seed, BATCH_SIZE, noise_dim
   return diff_list, variance_list, ssim_list
 
 # Generate and save the images
-def generate_and_save_images(model, epoch, test_input, save=True):
-  # training is set to False so all layers run in inference mode.
+def generate_and_save_images(model, epoch, test_input):
   predictions = model(test_input, training=False)
 
-  if save == True:
-    fig = plt.figure(figsize=(4, 4))
+  fig = plt.figure(figsize=(4, 4))
 
-    for i in range(predictions.shape[0]):
-      plt.subplot(4, 4, i+1)
-      plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
-      plt.axis('off')
+  for i in range(predictions.shape[0]):
+    plt.subplot(4, 4, i+1)
+    plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+    plt.axis('off')
 
-    plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
-    plt.close()
+  plt.savefig('images/image_at_epoch_{:04d}.png'.format(epoch))
+  plt.close()
 
   return predictions
 
@@ -235,16 +233,6 @@ def train_gan(X_train, max_epochs, batch_size, generator, discriminator):
     generator_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
     discriminator_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
 
-    """
-    # Resume training from the last checkpoint
-    generator = tf.keras.models.load_model('models/generator2000.keras')
-    discriminator = tf.keras.models.load_model('models/discriminator2000.keras')
-    generated_image = generator(noise, training=False)
-    decision = discriminator(generated_image)
-    print("Generator and discriminator loaded from checkpoint.")
-    print("Resuming training from the last checkpoint...")
-    """
-    
     print("START TRAINING ".center(50, "="))
 
     # Train the GAN on the dataset
@@ -255,9 +243,6 @@ def train_gan(X_train, max_epochs, batch_size, generator, discriminator):
     # Load the model and generate images
     generator = tf.keras.models.load_model('models/generatorF.keras')
     discriminator = tf.keras.models.load_model('models/discriminatorF.keras')
-
-    # Generate and save the images
-    generate_and_save_images(generator, 0, seed)
 
     # Plot the difference between the real and fake images and the variance
     # Plot in real time the difference between the real and fake images

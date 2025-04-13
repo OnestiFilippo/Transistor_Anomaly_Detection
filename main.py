@@ -1,7 +1,7 @@
 from train import train_gan, make_discriminator_model, make_generator_model
 from generate import generate
 from load_images import load_images
-from differences1 import differences
+from differences2 import differences
 
 # TODO: 
 # 01. Load and preprocess the dataset images (DONE)

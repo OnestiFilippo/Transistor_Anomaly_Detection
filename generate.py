@@ -1,26 +1,22 @@
 import tensorflow as tf
-import numpy as np
 import matplotlib.pyplot as plt
-import random
-import time
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Imposta il livello di log su ERROR
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Evita conflitti di librerie
 os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
 
 # Generate and save the images
-def generate_and_save_images(model, epoch, test_input, save=True):
+def generate_images(model, test_input):
   # training is set to False so all layers run in inference mode.
   predictions = model(test_input, training=False)
 
-  if save == True:
-    fig = plt.figure(figsize=(4, 4))
+  fig = plt.figure(figsize=(4, 4))
 
-    for i in range(predictions.shape[0]):
-      plt.subplot(4, 4, i+1)
-      plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
-      plt.axis('off')
-    plt.close()
+  for i in range(predictions.shape[0]):
+    plt.subplot(4, 4, i+1)
+    plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+    plt.axis('off')
+  plt.close()
 
   return predictions
 
@@ -46,49 +42,11 @@ def generate(generator_file, num_images_to_generate):
       seed = tf.random.normal([num_examples_to_generate, noise_dim])
 
       # Generate and save the images
-      predictions = generate_and_save_images(generator, 0, seed, save=False)
+      predictions = generate_images(generator, seed)
 
-      # Save the original image in a file using matplotlib
-      #plt.imsave('generated/original.png', X_train_original[min_index, :, :, 0] * 127.5 + 127.5, cmap='gray')
-      # Save the generated images in a file using matplotlib
+      # Save the generated images
       for j in range(predictions.shape[0]):
         plt.imsave('generated/generated_' + str(j+i*16) + '.png', predictions[j, :, :, 0] * 127.5 + 127.5, cmap='gray')
     
     # Visualize the generated images
     visualize_generated_images()
-
-    """# Visualize the generated images
-    plt.figure(figsize=(10, 5))
-    for i in range(predictions.shape[0]):
-      plt.subplot(4, 4, i+1)
-      plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
-      plt.axis('off')
-    plt.show()
-
-    # Get the generated image that is the most similar to the original images using SSIM
-    min_diff = -1  # SSIM ranges from -1 to 1, initialize with the lowest possible value
-    min_diff_img = None
-    min_index = 0
-    for i in range(predictions.shape[0]):
-      for j in range(X_train_original.shape[0]):
-        # Compute SSIM between the generated image and the original image
-        score = tf.image.ssim(X_train_original[j], predictions[i], max_val=1.0).numpy()
-        if score > min_diff:
-          min_diff = score
-          min_diff_img = predictions[i]
-          min_index = j
-
-    min_diff = round(min_diff * 100, 4)  # Convert to percentage
-    print(f"Most similar image SSIM: "+ str(min_diff) + "%")
-
-    # Visualize the most similar image
-    plt.figure(figsize=(10, 5))
-    plt.subplot(1, 2, 1)
-    plt.imshow(X_train_original[min_index], cmap='gray')
-    plt.title("Original image")
-    plt.axis('off')
-    plt.subplot(1, 2, 2)
-    plt.imshow(min_diff_img[:, :, 0] * 127.5 + 127.5, cmap='gray')
-    plt.title("Generated image with similarity: " + str(min_diff) + "%")
-    plt.axis('off')
-    plt.show()"""

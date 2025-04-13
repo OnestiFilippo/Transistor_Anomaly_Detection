@@ -1,0 +1,209 @@
+import cv2
+import numpy as np
+import os
+#from tensorflow import image as tf
+from skimage.metrics import structural_similarity as ssim
+
+def get_final_mask(test):
+    # Initialize a final mask with all pixels set to 255 (white)
+    final_mask = np.ones(test.shape, dtype='uint8') * 255
+
+    best_score = 0
+    best_image = None
+
+    # Get every generated image
+    for file in os.listdir('generated/'):
+        if file.endswith('.png'):
+            # Load the generated image
+            generated = cv2.imread('generated/' + file)
+            # Convert the generated image to grayscale
+            generated = cv2.cvtColor(generated, cv2.COLOR_BGR2GRAY)
+
+            # Compute SSIM between the two images
+            (score, diff) = ssim(test, generated, full=True)
+
+            # If the score is better than the best score, update the best score
+            if score > best_score:
+                best_score = score
+                best_image = generated
+            
+            # The diff image contains the actual image differences between the two images
+            # and is represented as a floating point data type in the range [0,1] 
+            # so we must convert the array to 8-bit unsigned integers in the range
+            # [0,255] so we can use it with OpenCV
+            diff = (diff * 255).astype("uint8")
+
+            thresh = cv2.threshold(diff, 200 , 255, cv2.THRESH_BINARY_INV)[1]
+            # Find contours to obtain the regions of the two input images that differ
+            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            mask = np.zeros(test.shape, dtype='uint8')
+            for c in contours:
+                area = cv2.contourArea(c)
+                if area > 2000:
+                        cv2.drawContours(mask, [c], 0, (255, 255, 255), -1)
+
+            # Combine the current mask with the final mask using bitwise AND
+            final_mask = cv2.bitwise_and(final_mask, mask)
+
+    return best_image, final_mask
+
+def iou(mask1, mask2):
+    intersection = np.logical_and(mask1, mask2).sum()
+    union = np.logical_or(mask1, mask2).sum()
+    if union > 0:
+        return intersection / union
+    else:
+        return 0.0
+
+def dice_coefficient(mask1, mask2):
+    intersection = np.logical_and(mask1, mask2).sum()
+    if (mask1.sum() + mask2.sum()) == 0:
+        return 1.0
+    else:
+        return 2 * intersection / (mask1.sum() + mask2.sum())
+
+def pixel_accuracy(mask1, mask2):
+    return np.mean(mask1 == mask2)
+    
+def differences():
+    path = 'transistor/test/'
+
+    # Create a list with all the test images
+    test_images = []
+    for dir in os.listdir(path):
+        if os.path.isdir(path + dir):
+            for im in os.listdir(path + dir):
+                if im.endswith('.png'):
+                    test_images.append(path+dir+'/'+im)
+    
+    # Shuffle the test images
+    np.random.shuffle(test_images)
+ 
+    print('Number of test images:', len(test_images))
+
+    for test_im_file in test_images:
+        # Load the test image
+        test_im = cv2.imread(test_im_file)
+        test_im = cv2.resize(test_im, (128, 128))
+        test_im = cv2.cvtColor(test_im, cv2.COLOR_BGR2GRAY)
+        # Get the final mask
+        best_image, final_mask = get_final_mask(test_im)
+        # Compare the final mask with the ground truth mask
+        best_score = 0
+        best_mask = None
+
+        ssim_list = []
+        iou_list = []
+        best_iou = 0
+        best_mask_iou = None
+        best_subdir_iou = None
+
+        dice_list = []
+        best_dice = 0
+        best_mask_dice = None
+        best_subdir_dice = None
+
+        pixel_acc_list = []
+        best_pixel_acc = 0
+        best_mask_pixel_acc = None
+        best_subdir_pixel_acc = None
+
+        for subdir in os.listdir('transistor/ground_truth/'):
+            if os.path.isdir('transistor/ground_truth/'+subdir):
+                for truth_file in os.listdir('transistor/ground_truth/'+subdir):
+                    if truth_file.endswith('.png'):
+                        ground_truth_mask = cv2.imread('transistor/ground_truth/' + subdir + '/' + truth_file)
+                        #print('Ground truth mask:', 'transistor/ground_truth/' + subdir + '/' + truth_file)
+                        ground_truth_mask = cv2.resize(ground_truth_mask, (128, 128))
+                        ground_truth_mask = cv2.cvtColor(ground_truth_mask, cv2.COLOR_BGR2GRAY)
+
+                        # Compare the final mask with the ground truth mask
+                        # Compute SSIM between the two images
+                        (score, _) = ssim(ground_truth_mask, final_mask, full=True)
+                        #print('SSIM: {:.4f}%'.format(score * 100))
+                        ssim_list.append(score)
+
+                        # If the score is better than the best score, update the best score
+                        if score > best_score:
+                            best_score = score
+                            best_mask = ground_truth_mask
+                            best_subdir = subdir 
+
+                        # Compute IoU between the two images
+                        iou_score = iou(ground_truth_mask, final_mask)
+                        #print('IoU: {:.4f}%'.format(iou_score * 100))
+                        iou_list.append(iou_score)
+
+                        if iou_score >= best_iou:
+                            best_iou = iou_score
+                            best_mask_iou = ground_truth_mask
+                            best_subdir_iou = subdir
+
+                        # Compute the difference between the two images
+                        diff = cv2.absdiff(ground_truth_mask, final_mask)
+                        diff = (diff * 255).astype("uint8")
+                        #cv2.imshow('Difference', diff)
+
+                        # Compute the Dice coefficient between the two images
+                        dice = dice_coefficient(ground_truth_mask, final_mask)
+                        #print('Dice coefficient: {:.4f}%'.format(dice * 100))
+                        dice_list.append(dice)
+
+                        if dice > best_dice:
+                            best_dice = dice
+                            best_mask_dice = ground_truth_mask
+                            best_subdir_dice = subdir
+
+                        # Compute the pixel accuracy between the two images
+                        pixel_acc = pixel_accuracy(ground_truth_mask, final_mask)
+                        #print('Pixel accuracy: {:.4f}%'.format(pixel_acc * 100))
+                        pixel_acc_list.append(pixel_acc)
+
+                        if pixel_acc > best_pixel_acc:
+                            best_pixel_acc = pixel_acc
+                            best_mask_pixel_acc = ground_truth_mask
+                            best_subdir_pixel_acc = subdir
+        
+        """# Plot the metrics in one figure
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(10, 5))
+        plt.plot(ssim_list, label='SSIM', color='blue')
+        plt.plot(iou_list, label='IoU', color='red')
+        plt.plot(dice_list, label='Dice coefficient', color='green')
+        plt.plot(pixel_acc_list, label='Pixel accuracy', color='orange')
+        plt.title("Metrics")
+        plt.xlabel("Ground truth masks")
+        plt.ylabel("Score")
+        plt.legend()
+        plt.show()
+
+        """
+        
+        # Results
+        cv2.imshow('Test Image', test_im)
+        cv2.imshow('Best Generated Image', best_image)        
+        cv2.imshow('Mask', final_mask)
+
+
+        # SSIM
+        print('SSIM Class:' + best_subdir + ' - Score: {:.4f}%'.format(best_score * 100))
+        cv2.imshow('Ground Truth SSIM', best_mask)
+
+        # IoU
+        print('IoU Class:' + best_subdir_iou + ' - Score: {:.4f}%'.format(best_iou * 100))
+        cv2.imshow('Ground Truth IoU', best_mask_iou)
+
+        # Dice coefficient
+        print('Dice coefficient Class:' + best_subdir_dice + ' - Score: {:.4f}%'.format(best_dice * 100))
+        cv2.imshow('Ground Truth Dice coefficient', best_mask_dice)
+
+        # Pixel accuracy
+        print('Pixel accuracy Class:' + best_subdir_pixel_acc + ' - Score: {:.4f}%'.format(best_pixel_acc * 100))
+        cv2.imshow('Ground Truth Pixel accuracy', best_mask_pixel_acc)
+
+        print('----------------------------------------')
+
+        # if ESC is pressed, exit the loop
+        if cv2.waitKey(0) & 0xFF == 27:
+            break
