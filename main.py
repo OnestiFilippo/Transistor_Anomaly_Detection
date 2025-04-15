@@ -14,7 +14,7 @@ from differences2 import differences
 # 08. Classify the generated images using the model trained in the previous task
 # 09. Evaluate the classification accuracy
 
-mode = 'differences' # 'train', 'generate' or 'differences'
+mode = 'generate' # 'train', 'generate' or 'differences'
 
 if __name__ == "__main__":
 
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
   elif mode == 'generate':
     # ---------------------- 04. Generate images using the trained model ----------------------
-    generate('models/generatorF.keras', 96)
+    generate('models/generator5000.keras', 96)
 
   elif mode == 'differences':
     # ---------------------- 07. Compare generated images with the test images ----------------------

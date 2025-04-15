@@ -32,6 +32,10 @@ def visualize_generated_images():
 
 # Load the model and generate images
 def generate(generator_file, num_images_to_generate):
+    # Empty the generated directory
+    for file in os.listdir('generated'):
+        os.remove(os.path.join('generated', file))
+
     generator = tf.keras.models.load_model(generator_file)
 
     for i in range(int(num_images_to_generate / 16)):
