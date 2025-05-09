@@ -1,7 +1,7 @@
 from train import train_gan, make_discriminator_model, make_generator_model
 from generate import generate
 from load_images import load_images
-from differences2 import differences
+from differences3 import differences
 
 # TODO: 
 # 01. Load and preprocess the dataset images (DONE)
@@ -14,7 +14,7 @@ from differences2 import differences
 # 08. Classify the generated images using the model trained in the previous task
 # 09. Evaluate the classification accuracy
 
-mode = 'generate' # 'train', 'generate' or 'differences'
+mode = 'differences' # 'train', 'generate' or 'differences'
 
 if __name__ == "__main__":
 
@@ -47,5 +47,6 @@ if __name__ == "__main__":
   elif mode == 'differences':
     # ---------------------- 07. Compare generated images with the test images ----------------------
   
-    differences()
+    accuracy = differences()
+    print("Accuracy: ", accuracy*100, "%")
 

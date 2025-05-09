@@ -165,7 +165,7 @@ def differences():
                             best_mask_pixel_acc = ground_truth_mask
                             best_subdir_pixel_acc = subdir
         
-        """# Plot the metrics in one figure
+        # Plot the metrics in one figure
         import matplotlib.pyplot as plt
         plt.figure(figsize=(10, 5))
         plt.plot(ssim_list, label='SSIM', color='blue')
@@ -178,13 +178,11 @@ def differences():
         plt.legend()
         plt.show()
 
-        """
         
         # Results
         cv2.imshow('Test Image', test_im)
         cv2.imshow('Best Generated Image', best_image)        
         cv2.imshow('Mask', final_mask)
-
 
         # SSIM
         print('SSIM Class:' + best_subdir + ' - Score: {:.4f}%'.format(best_score * 100))
