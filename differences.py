@@ -7,6 +7,7 @@ from collections import defaultdict
 import cv2
 import numpy as np
 
+# Function to get the final mask
 def get_final_mask(test):
     # Initialize a final mask with all pixels set to 255 (white)
     final_mask = np.ones(test.shape, dtype='uint8') * 255
@@ -55,14 +56,16 @@ def get_final_mask(test):
 
     return best_image, final_mask
 
+# Intersection over Union
 def iou(mask1, mask2):
     intersection = np.logical_and(mask1, mask2).sum()
     union = np.logical_or(mask1, mask2).sum()
     if union > 0:
-        return intersection / union
+        return (intersection / union)
     else:
         return 0.0
 
+# Dice coefficient
 def dice_coefficient(mask1, mask2):
     intersection = np.logical_and(mask1, mask2).sum()
     if (mask1.sum() + mask2.sum()) == 0:
@@ -70,9 +73,11 @@ def dice_coefficient(mask1, mask2):
     else:
         return (2 * intersection / (mask1.sum() + mask2.sum())) * 100
 
+# Pixel accuracy
 def pixel_accuracy(mask1, mask2):
     return np.mean(mask1 == mask2)
 
+# Function to get the final class based on weighted scores
 def get_final_class(results_dict, weights):
     # Collect all unique classes
     all_classes = set()
@@ -97,6 +102,7 @@ def get_final_class(results_dict, weights):
     
     return best_class, best_score, dict(class_scores)
 
+# Function to visualize the results
 def visualize_results(test_im, best_image, final_mask, 
                       best_mask, best_subdir, best_score,
                       best_mask_iou, best_subdir_iou, best_iou,
@@ -387,7 +393,12 @@ def differences(view=False):
         if final_class == real_class:
             total_correct += 1
             
-        
+        print("SSIM:", best_score)
+        print("IoU:", best_iou)
+        print("Dice coefficient:", best_dice)
+        print("Pixel accuracy:", best_pixel_acc)
+
+        print()
         print(f"Classe finale: {final_class} con punteggio: {final_score:.4f}")
         print("Punteggi per classe:")
         for cls, score in sorted(class_scores.items(), key=lambda x: x[1], reverse=True):
