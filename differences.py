@@ -394,18 +394,30 @@ def differences(view=False):
             total_correct += 1
             
         print("SSIM:", best_score)
+        best_score = best_score * weights['ssim']
         print("IoU:", best_iou)
+        best_iou = best_iou * weights['iou']
         print("Dice coefficient:", best_dice)
+        best_dice = best_dice * weights['dice']
         print("Pixel accuracy:", best_pixel_acc)
+        best_pixel_acc = best_pixel_acc * weights['pixel_acc']
+
+        """# Pie chart for the class scores
+        plt.figure(figsize=(8, 8))
+        plt.pie(class_scores.values(), labels=class_scores.keys(), autopct='%1.1f%%', startangle=140)
+        plt.title('Class Scores')
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.show()"""
 
         print()
-        print(f"Classe finale: {final_class} con punteggio: {final_score:.4f}")
-        print("Punteggi per classe:")
+        print(f"Final Class: {final_class} with score: {final_score:.4f}")
+        print("Class Scores:")
         for cls, score in sorted(class_scores.items(), key=lambda x: x[1], reverse=True):
             print(f"  {cls}: {score:.4f}")
-        print("Classe reale:", real_class)
+        print("Real Class:", real_class)
         print('\n----------------------------------------\n')
-        
+
+       
         if view == True:
             # Visualize the results
             visualize_results(test_im, best_image, final_mask, 

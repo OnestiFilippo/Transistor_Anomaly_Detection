@@ -54,5 +54,5 @@ if __name__ == "__main__":
     # ---------------------- Compare generated images with the test images to obtain the accuracy ----------------------
   
     accuracy = differences(view=False)
-    print("Accuracy: ", accuracy*100, "%")
+    print("Final Accuracy: ", accuracy*100, "%")
 
