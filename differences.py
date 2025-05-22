@@ -276,8 +276,8 @@ def plot_metrics(tp, tn, fp, fn):
     plt.tight_layout()
     plt.show()
 
-
-def differences(view=False, viewM=False):
+# Function to compare generated images with the test images
+def differences(view=False, viewMetrics=False):
     path = 'transistor/test/'
 
     # Create a list with all the test images
@@ -289,19 +289,16 @@ def differences(view=False, viewM=False):
                 if im.endswith('.png'):
                     test_images.append(path+dir+'/'+im)
                     real_classes.append(dir)
-    
-    # Shuffle the test images
-    #np.random.shuffle(test_images)
  
     print('Number of test images:', len(test_images))
     total_correctM = 0
     total_correctB = 0
 
+    # Binary classification metrics
     true_positive = 0
     false_positive = 0
     false_negative = 0
     true_negative = 0
-
 
     # For each test image
     for test_im_file in test_images:
@@ -341,14 +338,12 @@ def differences(view=False, viewM=False):
                 for truth_file in os.listdir('transistor/ground_truth/'+subdir):
                     if truth_file.endswith('.png'):
                         ground_truth_mask = cv2.imread('transistor/ground_truth/' + subdir + '/' + truth_file)
-                        #print('Ground truth mask:', 'transistor/ground_truth/' + subdir + '/' + truth_file)
                         ground_truth_mask = cv2.resize(ground_truth_mask, (128, 128))
                         ground_truth_mask = cv2.cvtColor(ground_truth_mask, cv2.COLOR_BGR2GRAY)
 
                         # Compare the final mask with the ground truth mask
                         # Compute SSIM between the two images
                         (score, _) = ssim(ground_truth_mask, final_mask, full=True)
-                        #print('SSIM: {:.4f}%'.format(score * 100))
                         ssim_list.append(score)
 
                         # If the score is better than the best score, update the best score
@@ -359,7 +354,6 @@ def differences(view=False, viewM=False):
 
                         # Compute IoU between the two images
                         iou_score = iou(ground_truth_mask, final_mask)
-                        #print('IoU: {:.4f}%'.format(iou_score * 100))
                         iou_list.append(iou_score)
 
                         if iou_score >= best_iou:
@@ -369,7 +363,6 @@ def differences(view=False, viewM=False):
 
                         # Compute the Dice coefficient between the two images
                         dice = dice_coefficient(ground_truth_mask, final_mask)
-                        #print('Dice coefficient: {:.4f}%'.format(dice * 100))
                         dice_list.append(dice)
 
                         if dice > best_dice:
@@ -379,7 +372,6 @@ def differences(view=False, viewM=False):
 
                         # Compute the pixel accuracy between the two images
                         pixel_acc = pixel_accuracy(ground_truth_mask, final_mask)
-                        #print('Pixel accuracy: {:.4f}%'.format(pixel_acc * 100))
                         pixel_acc_list.append(pixel_acc)
 
                         if pixel_acc > best_pixel_acc:
@@ -388,7 +380,6 @@ def differences(view=False, viewM=False):
                             best_subdir_pixel_acc = subdir
         
         # Results
-
         results = {
             'ssim': {'class': best_subdir, 'score': best_score},
             'iou': {'class': best_subdir_iou, 'score': best_iou},
@@ -404,21 +395,26 @@ def differences(view=False, viewM=False):
             'pixel_acc': 0.1
         }
         
+        # Get the final class based on the weighted scores
         final_classM, final_scoreM, class_scoresM = get_final_class(results, weights)
         
+        # Increment the total correct count for multi-class classification
         if final_classM == real_class:
             total_correctM += 1
 
+        # Get the final class for binary classification
         if final_classM == 'good':
             final_classB = 'good'
         else:
             final_classB = 'defected'
 
+        # Get the real class for binary classification
         if real_class == 'good':
             real_classB = 'good'
         else:
             real_classB = 'defected'
 
+        # Get the metric values for binary classification and increment the total correct count
         if final_classB == real_classB:
             total_correctB += 1
             if final_classB == 'good':
@@ -431,26 +427,26 @@ def differences(view=False, viewM=False):
             else:
                 false_negative += 1
         
-        print("SSIM:", best_score)
+        # Print the results
+        print("SSIM: {:.2f}".format(best_score))
         best_score = best_score * weights['ssim']
-        print("IoU:", best_iou)
+        print("IoU: {:.2f}".format(best_iou))
         best_iou = best_iou * weights['iou']
-        print("Dice coefficient:", best_dice)
+        print("Dice coefficient: {:.2f}".format(best_dice))
         best_dice = best_dice * weights['dice']
-        print("Pixel accuracy:", best_pixel_acc)
+        print("Pixel accuracy: {:.2f}".format(best_pixel_acc))
         best_pixel_acc = best_pixel_acc * weights['pixel_acc']
 
         print()
-        print(f"Final Class: {final_classM} with score: {final_scoreM:.4f}")
         print("Class Scores:")
         for cls, score in sorted(class_scoresM.items(), key=lambda x: x[1], reverse=True):
-            print(f"  {cls}: {score:.4f}")
+            print(f" - {cls}: {score:.2f}")
+        print(f"\nFinal Class: {final_classM} with score: {final_scoreM:.2f}")
         print("Real Class:", real_class)
         print('\n----------------------------------------\n')
 
-       
+        # Visualize the results
         if view == True:
-            # Visualize the results
             visualize_results(test_im, best_image, final_mask, 
                 best_mask, best_subdir, best_score,
                 best_mask_iou, best_subdir_iou, best_iou,
@@ -458,12 +454,14 @@ def differences(view=False, viewM=False):
                 best_mask_pixel_acc, best_subdir_pixel_acc, best_pixel_acc,
                 real_class, final_classM, final_classB, real_classB)
             
-    
-    if viewM == True:
+    # Visualize the binary classification metrics
+    if viewMetrics == True:
         plot_metrics(true_positive, true_negative, false_positive, false_negative)
         
+    # Calculate the final accuracy
     accuracyM = total_correctM / total_images
     accuracyB = total_correctB / total_images
+
     return accuracyM, accuracyB
 
 

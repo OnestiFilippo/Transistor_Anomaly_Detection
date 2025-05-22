@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import random
 import time
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Imposta il livello di log su ERROR
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Evita conflitti di librerie
-os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Set log level to ERROR
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Avoid library conflicts
+os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignore Python warnings
 
 # Function to create the generator model
 def make_generator_model():
@@ -131,16 +131,15 @@ def train(dataset, epochs, generator, discriminator, seed, BATCH_SIZE, noise_dim
   variance_list = []
   ssim_list = []
 
-  plt.ion()  # Modalità interattiva
+  plt.ion()  # Interactive mode on
   fig, ax = plt.subplots()
   ax.set_title("Difference between real and fake images")
   ax.set_xlabel("Epochs")
   ax.set_ylabel("Difference")
   ax.set_xlim(0, epochs)
   ax.set_ylim(0, 1)
-  line1, = ax.plot([], [], 'r-')  # Linea rossa
-  line2, = ax.plot([], [], 'b-')  # Linea blu
-
+  line1, = ax.plot([], [], 'r-')  # Red line
+  line2, = ax.plot([], [], 'b-')  # Blue line
   for epoch in range(epochs):
     try:
       start = time.time()
@@ -162,16 +161,16 @@ def train(dataset, epochs, generator, discriminator, seed, BATCH_SIZE, noise_dim
       ssim_list.append(ssim_value)
       if epoch > 100:
         variance_list.append(np.var(diff_list[-100:]))
-
-      # Stop training if the difference variance remain the same
-      if len(diff_list) > 200 and np.var(diff_list[-100:]) < 1.5e-07:
-        print("Early stopping: Variance threshold reached.")
-        break
       
       # Save the model every 100 epochs
       if (epoch + 1) % 100 == 0:
         generator.save('models/generator'+str(epoch+1)+'.keras')
         discriminator.save('models/discriminator'+str(epoch+1)+'.keras')
+
+      # Stop training if the difference variance remains nearly the same for 100 epochs
+      if len(diff_list) > 200 and np.var(diff_list[-100:]) < 1.5e-07:
+        print("Early stopping: Variance threshold reached.")
+        break
 
       # Stop training if the model reaches ssim threshold
       if ssim_value > 80:
@@ -183,18 +182,18 @@ def train(dataset, epochs, generator, discriminator, seed, BATCH_SIZE, noise_dim
       line1.set_ydata(diff_list)
       line2.set_xdata(np.arange(len(ssim_list)))
       line2.set_ydata(ssim_list)
-      ax.relim()  # Aggiorna i limiti degli assi
-      ax.autoscale_view()  # Ridimensiona gli assi
-      # Aggiorna il grafico
-      plt.draw()  # Disegna il nuovo grafico
-      plt.pause(0.05)  # Attendi un po' per simulare dati in tempo reale
+      ax.relim()  # Update axis limits
+      ax.autoscale_view()  # Rescale axes
+      # Update the plot
+      plt.draw()  # Draw the updated plot
+      plt.pause(0.05)  # Pause briefly to simulate real-time data
     
     # Stop training if KeyboardInterrupt
     except KeyboardInterrupt:
       break
 
-  plt.ioff()  # Disattiva la modalità interattiva
-  # Mostra il grafico finale
+  plt.ioff()  # Interactive mode off
+  # Show the final plot
   plt.show()
 
   # Generate after the final epoch
@@ -244,15 +243,17 @@ def train_gan(X_train, max_epochs, batch_size, generator, discriminator):
     generator = tf.keras.models.load_model('models/generatorF.keras')
     discriminator = tf.keras.models.load_model('models/discriminatorF.keras')
 
-    # Plot the difference between the real and fake images and the variance
-    # Plot in real time the difference between the real and fake images
+    # Plot the absolute difference between the real and fake images and the variance
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
+    # Absolute Difference between the real and fake images
     plt.plot(diff_list, label='Difference', color='blue')
+    # SSIM between the real and fake images
     plt.plot(ssim_list, label='SSIM', color='red')   
     plt.title("Difference between real and fake images")
     plt.xlabel("Epochs")
     plt.ylabel("Difference")
+
     plt.subplot(1, 2, 2)
     plt.plot(variance_list)
     plt.title("Variance of the difference")

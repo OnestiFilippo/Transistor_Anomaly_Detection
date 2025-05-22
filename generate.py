@@ -1,9 +1,9 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Imposta il livello di log su ERROR
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Evita conflitti di librerie
-os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignora i warning di Python
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Set log level to ERROR
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Avoid library conflicts
+os.environ['PYTHONWARNINGS'] = 'ignore'  # Ignore Python warnings
 
 # Generate and save the images
 def generate_images(model, test_input):
