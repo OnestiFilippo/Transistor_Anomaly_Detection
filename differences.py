@@ -244,8 +244,8 @@ def visualize_results(test_im, best_image, final_mask,
 # Function to plot the binary metrics
 def plot_binary_metrics(tp, tn, fp, fn):
     # Build the confusion matrix
-    conf_matrix = np.array([[tp, fp],
-                            [fn, tn]])
+    conf_matrix = np.array([[tp, fn],
+                            [fp, tn]])
 
     # Calculate static metrics
     accuracy = (tp + tn) / (tp + tn + fp + fn)
@@ -261,7 +261,7 @@ def plot_binary_metrics(tp, tn, fp, fn):
     fig, axs = plt.subplots(1, 2, figsize=(12, 5))
 
     # --- Confusion Matrix ---
-    disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=["Negative", "Positive"])
+    disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=["Positive", "Negative"])
     disp.plot(ax=axs[0], cmap="Blues", colorbar=False)
     axs[0].set_title("Confusion Matrix")
 
@@ -515,6 +515,10 @@ def differences(view=False, viewMetrics=False):
     # Visualize the binary classification metrics
     if viewMetrics == True:
         # Plot the binary metrics
+        print("True Positive: ", true_positive)
+        print("True Negative: ", true_negative)
+        print("False Positive: ", false_positive)
+        print("False Negative: ", false_negative)
         plot_binary_metrics(true_positive, true_negative, false_positive, false_negative)
 
         # Plot the multiclass metrics
