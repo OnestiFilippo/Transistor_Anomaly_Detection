@@ -24,7 +24,7 @@ Learns to produce realistic images that resemble those in the training dataset.
 Attempts to distinguish between real and generated images, guiding the generator to improve.
 
 <p align="center">
-<img width="500" alt="DiscriminatroModel" src="images/DiscriminatorModel.png" />
+<img width="500" alt="DiscriminatorModel" src="images/DiscriminatorModel.png" />
 </p>
 
 ---
