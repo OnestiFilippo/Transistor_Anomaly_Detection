@@ -53,7 +53,7 @@ if __name__ == "__main__":
   elif mode == 'differences':
     # ---------------------- Compare generated images with the test images to obtain the accuracy ----------------------
   
-    accuracyM, accuracyB = differences(view=False, viewMetrics=True)
+    accuracyM, accuracyB = differences(view=True, viewMetrics=True)
     print("Final Binary Accuracy: ", accuracyB*100, "%")
     print("Final Multi-Class Accuracy: ", accuracyM*100, "%")
 
