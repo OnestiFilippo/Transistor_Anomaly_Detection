@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 import cv2
 import numpy as np
-from sklearn.metrics import roc_curve, auc, ConfusionMatrixDisplay
 
 # Function to get the final mask
 def get_final_mask(test):
@@ -96,7 +95,9 @@ def get_final_class(results_dict, weights):
             
             # Add the weighted score to the class
             class_scores[class_name] += score * weight
-        
+    
+    print("Class scores:", class_scores)
+    
     # Find the class with the highest score
     best_class = max(class_scores, key=class_scores.get)
     best_score = class_scores[best_class]
@@ -109,14 +110,14 @@ def visualize_results(test_im, best_image, final_mask,
                       best_mask_iou, best_subdir_iou, best_iou,
                       best_mask_dice, best_subdir_dice, best_dice,
                       best_mask_pixel_acc, best_subdir_pixel_acc, best_pixel_acc,
-                      real_class, final_classM, final_classB, real_classB):
+                      real_class, final_class, final_score):
     
     # Create a figure with 3 rows and 3 columns
     plt.figure(figsize=(16, 8))
     
     # Define colors for the titles
     green_color = 'green'
-    normal_colorM = 'red'
+    normal_color = 'red'
     
     # First row: original images and final mask
     plt.subplot(3, 3, 1)
@@ -146,14 +147,14 @@ def visualize_results(test_im, best_image, final_mask,
     # Second row: SSIM and IoU
     plt.subplot(3, 3, 4)
     # Color the title green if the class matches the real class
-    ssim_color = green_color if best_subdir == real_class else normal_colorM
+    ssim_color = green_color if best_subdir == real_class else normal_color
     plt.title(f'Ground Truth SSIM\nClass: {best_subdir}\nScore: {best_score*100:.4f}%', color=ssim_color)
     plt.imshow(best_mask, cmap='gray')
     plt.axis('off')
     
     plt.subplot(3, 3, 5)
     # Color the title green if the class matches the real class
-    iou_color = green_color if best_subdir_iou == real_class else normal_colorM
+    iou_color = green_color if best_subdir_iou == real_class else normal_color
     plt.title(f'Ground Truth IoU\nClass: {best_subdir_iou}\nScore: {best_iou*100:.4f}%', color=iou_color)
     plt.imshow(best_mask_iou, cmap='gray')
     plt.axis('off')
@@ -161,14 +162,14 @@ def visualize_results(test_im, best_image, final_mask,
     # Third row: Dice coefficient and Pixel accuracy
     plt.subplot(3, 3, 7)
     # Color the title green if the class matches the real class
-    dice_color = green_color if best_subdir_dice == real_class else normal_colorM
+    dice_color = green_color if best_subdir_dice == real_class else normal_color
     plt.title(f'Ground Truth Dice coefficient\nClass: {best_subdir_dice}\nScore: {best_dice*100:.4f}%', color=dice_color)
     plt.imshow(best_mask_dice, cmap='gray')
     plt.axis('off')
     
     plt.subplot(3, 3, 8)
     # Color the title green if the class matches the real class
-    pixel_acc_color = green_color if best_subdir_pixel_acc == real_class else normal_colorM
+    pixel_acc_color = green_color if best_subdir_pixel_acc == real_class else normal_color
     plt.title(f'Ground Truth Pixel accuracy\nClass: {best_subdir_pixel_acc}\nScore: {best_pixel_acc*100:.4f}%', color=pixel_acc_color)
     plt.imshow(best_mask_pixel_acc, cmap='gray')
     plt.axis('off')
@@ -206,10 +207,37 @@ def visualize_results(test_im, best_image, final_mask,
     plt.imshow(overlay)
     plt.axis('off')
     
-    # Color for the final multi-class class
-    final_class_colorM = green_color if final_classM == real_class else normal_colorM
-    # Color for the final binary class
-    final_class_colorB = green_color if final_classB == real_classB else normal_colorM
+    # Calculate the weighted average and final class
+    """weights = {
+        'ssim': 0.1,
+        'iou': 0.4,
+        'dice': 0.4,
+        'pixel_acc': 0.1
+    }
+    
+    results = {
+        'ssim': {'class': best_subdir, 'score': best_score},
+        'iou': {'class': best_subdir_iou, 'score': best_iou},
+        'dice': {'class': best_subdir_dice, 'score': best_dice},
+        'pixel_acc': {'class': best_subdir_pixel_acc, 'score': best_pixel_acc}
+    }
+    
+    # Calculate the weighted score for each class
+    class_scores = {}
+    for metric, weight in weights.items():
+        class_name = results[metric]['class']
+        score = results[metric]['score']
+        
+        if class_name not in class_scores:
+            class_scores[class_name] = 0
+        class_scores[class_name] += score * weight
+    
+    # Find the class with the highest score
+    #final_class = max(class_scores, key=class_scores.get)
+    #final_score = class_scores[final_class]"""
+    
+    # Color for the final class
+    final_class_color = green_color if final_class == real_class else normal_color
     
     # Visualization of metrics and final class in a subplot
     plt.subplot(3, 3, 9)
@@ -217,67 +245,26 @@ def visualize_results(test_im, best_image, final_mask,
     
     # Display the metrics
     plt.text(0.1, 0.9, f"SSIM: {best_score*100:.4f}%", fontsize=12, 
-             color=ssim_color if best_subdir == real_class else normal_colorM)
+             color=ssim_color if best_subdir == real_class else normal_color)
     plt.text(0.1, 0.8, f"IoU: {best_iou*100:.4f}%", fontsize=12, 
-             color=iou_color if best_subdir_iou == real_class else normal_colorM)
+             color=iou_color if best_subdir_iou == real_class else normal_color)
     plt.text(0.1, 0.7, f"Dice: {best_dice*100:.4f}%", fontsize=12, 
-             color=dice_color if best_subdir_dice == real_class else normal_colorM)
+             color=dice_color if best_subdir_dice == real_class else normal_color)
     plt.text(0.1, 0.6, f"Pixel Acc: {best_pixel_acc*100:.4f}%", fontsize=12, 
-             color=pixel_acc_color if best_subdir_pixel_acc == real_class else normal_colorM)
-    
-
+             color=pixel_acc_color if best_subdir_pixel_acc == real_class else normal_color)
     
     # Display the real class
-    # plt.text(0.1, 0.4, f"Real Class: {real_class}", fontsize=14, weight='bold')
-    plt.text(0.1, 0.4, f"Real Class: {real_classB}", fontsize=14, weight='bold')
+    plt.text(0.1, 0.4, f"Real Class: {real_class}", fontsize=14, weight='bold')
     
     # Display the final class with the weighted average
-    plt.text(0.1, 0.25, f"Final Class: {final_classB}", fontsize=14, weight='bold', 
-             color=final_class_colorB)
-    
-    # Display the final multi-class class
-    plt.text(0.1, 0.1, f"Final Multi-Class Class: {final_classM}", fontsize=12, color=final_class_colorM)
+    plt.text(0.1, 0.3, f"Final Class: {final_class}", fontsize=14, weight='bold', 
+             color=final_class_color)
+    plt.text(0.1, 0.2, f"Final Score: {final_score*100:.4f}%", fontsize=12)
     
     plt.tight_layout()
     plt.show()
 
-# Function to plot the metrics
-def plot_metrics(tp, tn, fp, fn):
-    # Build the confusion matrix
-    conf_matrix = np.array([[tn, fp],
-                            [fn, tp]])
-
-    # Calculate static metrics
-    accuracy = (tp + tn) / (tp + tn + fp + fn)
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
-    # List of metric names and values
-    metric_names = ['Accuracy', 'Precision', 'Recall', 'F1-score']
-    metric_values = [accuracy, precision, recall, f1]
-
-    # Create the figure
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
-
-    # --- Confusion Matrix ---
-    disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=["Negative", "Positive"])
-    disp.plot(ax=axs[0], cmap="Blues", colorbar=False)
-    axs[0].set_title("Confusion Matrix")
-
-    # --- Classification metrics plot ---
-    axs[1].bar(metric_names, metric_values, color='deepskyblue')
-    axs[1].set_ylim(0, 1.05)
-    axs[1].set_ylabel("Value")
-    axs[1].set_title("Classification Metrics")
-    for i, v in enumerate(metric_values):
-        axs[1].text(i, v+0.02, f"{v*100:.2f}%", ha='center', fontweight='bold')
-
-    plt.tight_layout()
-    plt.show()
-
-
-def differences(view=False, viewM=False):
+def differences(view=False):
     path = 'transistor/test/'
 
     # Create a list with all the test images
@@ -294,14 +281,7 @@ def differences(view=False, viewM=False):
     #np.random.shuffle(test_images)
  
     print('Number of test images:', len(test_images))
-    total_correctM = 0
-    total_correctB = 0
-
-    true_positive = 0
-    false_positive = 0
-    false_negative = 0
-    true_negative = 0
-
+    total_correct = 0
 
     # For each test image
     for test_im_file in test_images:
@@ -390,10 +370,10 @@ def differences(view=False, viewM=False):
         # Results
 
         results = {
-            'ssim': {'class': best_subdir, 'score': best_score},
-            'iou': {'class': best_subdir_iou, 'score': best_iou},
-            'dice': {'class': best_subdir_dice, 'score': best_dice},
-            'pixel_acc': {'class': best_subdir_pixel_acc, 'score': best_pixel_acc}
+        'ssim': {'class': best_subdir, 'score': best_score},
+        'iou': {'class': best_subdir_iou, 'score': best_iou},
+        'dice': {'class': best_subdir_dice, 'score': best_dice},
+        'pixel_acc': {'class': best_subdir_pixel_acc, 'score': best_pixel_acc}
         }
         
         # Apply the specified weights
@@ -404,33 +384,11 @@ def differences(view=False, viewM=False):
             'pixel_acc': 0.1
         }
         
-        final_classM, final_scoreM, class_scoresM = get_final_class(results, weights)
+        final_class, final_score, class_scores = get_final_class(results, weights)
         
-        if final_classM == real_class:
-            total_correctM += 1
-
-        if final_classM == 'good':
-            final_classB = 'good'
-        else:
-            final_classB = 'defected'
-
-        if real_class == 'good':
-            real_classB = 'good'
-        else:
-            real_classB = 'defected'
-
-        if final_classB == real_classB:
-            total_correctB += 1
-            if final_classB == 'good':
-                true_positive += 1
-            else:   
-                true_negative += 1
-        else:
-            if final_classB == 'good':
-                false_positive += 1
-            else:
-                false_negative += 1
-        
+        if final_class == real_class:
+            total_correct += 1
+            
         print("SSIM:", best_score)
         best_score = best_score * weights['ssim']
         print("IoU:", best_iou)
@@ -441,9 +399,9 @@ def differences(view=False, viewM=False):
         best_pixel_acc = best_pixel_acc * weights['pixel_acc']
 
         print()
-        print(f"Final Class: {final_classM} with score: {final_scoreM:.4f}")
+        print(f"Final Class: {final_class} with score: {final_score:.4f}")
         print("Class Scores:")
-        for cls, score in sorted(class_scoresM.items(), key=lambda x: x[1], reverse=True):
+        for cls, score in sorted(class_scores.items(), key=lambda x: x[1], reverse=True):
             print(f"  {cls}: {score:.4f}")
         print("Real Class:", real_class)
         print('\n----------------------------------------\n')
@@ -456,15 +414,10 @@ def differences(view=False, viewM=False):
                 best_mask_iou, best_subdir_iou, best_iou,
                 best_mask_dice, best_subdir_dice, best_dice,
                 best_mask_pixel_acc, best_subdir_pixel_acc, best_pixel_acc,
-                real_class, final_classM, final_classB, real_classB)
-            
-    
-    if viewM == True:
-        plot_metrics(true_positive, true_negative, false_positive, false_negative)
+                real_class, final_class, final_score)
         
-    accuracyM = total_correctM / total_images
-    accuracyB = total_correctB / total_images
-    return accuracyM, accuracyB
+    accuracy = total_correct / total_images
+    return accuracy
 
 
 
