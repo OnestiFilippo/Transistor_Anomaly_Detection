@@ -8,7 +8,7 @@ This project implements a **Generative Adversarial Network (GAN)** in Python to 
 ## Network Architecture
 
 <p align="center">
-<img width="500" alt="GAN" src="https://github.com/user-attachments/assets/c066df69-d9bc-4f1d-9f30-b4fa334fa0ff" />
+<img width="500" alt="GAN" src="images/GAN.png" />
 </p>
 
 The GAN consists of two main components:
@@ -17,14 +17,14 @@ The GAN consists of two main components:
 Learns to produce realistic images that resemble those in the training dataset.
 
 <p align="center">
-<img width="500" alt="GeneratorModel" src="https://github.com/user-attachments/assets/eba71ba0-2d8c-4af3-b1f9-1996633f5389" />
+<img width="500" alt="GeneratorModel" src="images/GeneratorModel.png" />
 </p>
 
 ### Discriminator 
 Attempts to distinguish between real and generated images, guiding the generator to improve.
 
 <p align="center">
-<img width="500" alt="DiscriminatroModel" src="https://github.com/user-attachments/assets/09264bfe-8902-4211-b859-f8408f0928db" />
+<img width="500" alt="DiscriminatroModel" src="images/DiscriminatorModel.png" />
 </p>
 
 ---
@@ -49,7 +49,7 @@ During training, models and generated images were saved every 100 epochs. The fo
 - **Variance** of the absolute difference across epochs
 
 <p align="center">
-   <img width="700" alt="TrainingMetrics" src="https://github.com/user-attachments/assets/cb7ff674-d767-4e8d-9e46-13410e6b9bf0" />
+   <img width="700" alt="TrainingMetrics" src="images/TrainingPlot.png" />
 </p>
 These plots help visualize how well the generator learns to approximate the distribution of real images over time.
 
@@ -71,7 +71,7 @@ These plots help visualize how well the generator learns to approximate the dist
 4. The weighted combination of these metrics determines the final class of the test image.
 
 <p align="center">
-<img width="700" alt="Differences" src="https://github.com/user-attachments/assets/7781a9b6-86a2-4739-9e3a-032fab61a937" />
+<img width="700" alt="Differences" src="images/Differences.png" />
 </p>
 
 ### Classification Result Example
