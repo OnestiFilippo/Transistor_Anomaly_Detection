@@ -241,11 +241,11 @@ def visualize_results(test_im, best_image, final_mask,
     plt.tight_layout()
     plt.show()
 
-# Function to plot the metrics
-def plot_metrics(tp, tn, fp, fn):
+# Function to plot the binary metrics
+def plot_binary_metrics(tp, tn, fp, fn):
     # Build the confusion matrix
-    conf_matrix = np.array([[tn, fp],
-                            [fn, tp]])
+    conf_matrix = np.array([[tp, fp],
+                            [fn, tn]])
 
     # Calculate static metrics
     accuracy = (tp + tn) / (tp + tn + fp + fn)
@@ -266,13 +266,57 @@ def plot_metrics(tp, tn, fp, fn):
     axs[0].set_title("Confusion Matrix")
 
     # --- Classification metrics plot ---
-    axs[1].bar(metric_names, metric_values, color='deepskyblue')
+    axs[1].bar(metric_names, metric_values, color='darkblue')
     axs[1].set_ylim(0, 1.05)
     axs[1].set_ylabel("Value")
     axs[1].set_title("Classification Metrics")
     for i, v in enumerate(metric_values):
-        axs[1].text(i, v+0.02, f"{v*100:.2f}%", ha='center', fontweight='bold')
+        axs[1].text(i, v+0.02, f"{v*100:.0f}%", ha='center', fontweight='bold')
 
+    plt.tight_layout()
+    plt.show()
+
+# Function to plot the multiclass metrics
+def plot_multiclass_metrics(classes, true_positiveM, true_negativeM, false_positiveM, false_negativeM):
+    # Calculate multiclass accuracy per class
+    accuracy = [(tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0 for tp, tn, fp, fn in zip(true_positiveM, true_negativeM, false_positiveM, false_negativeM)]
+
+    # Calulate multiclass precision
+    precision = [tp / (tp + fp) if (tp + fp) > 0 else 0 for tp, fp in zip(true_positiveM, false_positiveM)]
+
+    # Calculate multiclass recall
+    recall = [tp / (tp + fn) if (tp + fn) > 0 else 0 for tp, fn in zip(true_positiveM, false_negativeM)]
+
+    # Calculate multiclass F1 score
+    f1_score = [2 * (p * r) / (p + r) if (p + r) > 0 else 0 for p, r in zip(precision, recall)]
+
+    metrics = [accuracy, precision, recall, f1_score]
+    colors = ['darkblue', 'royalblue', 'dodgerblue', 'lightskyblue']
+    labels = ['ACCURACY', 'PRECISION', 'RECALL', 'F1-SCORE']
+
+    x = np.arange(len(classes))  # the label locations
+    width = 0.2  # width of the bars
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    for i, metric in enumerate(metrics):
+        bars = ax.bar(x + i * width, metric, width, label=labels[i], color=colors[i])
+        # Add text labels above bars
+        for bar in bars:
+            height = bar.get_height()
+            ax.annotate(f'{height * 100:.0f}%',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3),  # vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom', fontsize=8, fontweight='bold')
+
+    ax.set_ylabel('Score')
+    ax.set_title("Classification Metrics per Class")
+    ax.set_xticks(x + 1.5 * width)
+    ax.set_xticklabels(classes)
+    ax.legend()
+    #ax.grid(True, linestyle='--', linewidth=0.5)
+    
     plt.tight_layout()
     plt.show()
 
@@ -292,6 +336,13 @@ def differences(view=False, viewMetrics=False):
  
     print('Number of test images:', len(test_images))
     total_correctM = 0
+
+    classes = ['good', 'bent_lead', 'cut_lead', 'damaged_case', 'misplaced']
+    true_positiveM = [0] * len(classes)
+    false_positiveM = [0] * len(classes)
+    false_negativeM = [0] * len(classes)
+    true_negativeM = [0] * len(classes)
+
     total_correctB = 0
 
     # Binary classification metrics
@@ -402,17 +453,24 @@ def differences(view=False, viewMetrics=False):
         if final_classM == real_class:
             total_correctM += 1
 
+        # Get the metric values for multi-class classification
+        for i, cls in enumerate(classes):
+            if final_classM == cls:
+                if real_class == cls:
+                    true_positiveM[i] += 1
+                else:
+                    false_positiveM[i] += 1
+            else:
+                if real_class == cls:
+                    false_negativeM[i] += 1
+                else:
+                    true_negativeM[i] += 1
+
         # Get the final class for binary classification
-        if final_classM == 'good':
-            final_classB = 'good'
-        else:
-            final_classB = 'defected'
+        final_classB = 'good' if final_classM == 'good' else 'defected'
 
         # Get the real class for binary classification
-        if real_class == 'good':
-            real_classB = 'good'
-        else:
-            real_classB = 'defected'
+        real_classB = 'good' if real_class == 'good' else 'defected'
 
         # Get the metric values for binary classification and increment the total correct count
         if final_classB == real_classB:
@@ -428,20 +486,20 @@ def differences(view=False, viewMetrics=False):
                 false_negative += 1
         
         # Print the results
-        print("SSIM: {:.2f}".format(best_score))
+        print("SSIM: {:.2f} %".format(best_score*100))
         best_score = best_score * weights['ssim']
-        print("IoU: {:.2f}".format(best_iou))
+        print("IoU: {:.2f} %".format(best_iou*100))
         best_iou = best_iou * weights['iou']
-        print("Dice coefficient: {:.2f}".format(best_dice))
+        print("Dice coefficient: {:.2f} %".format(best_dice*100))
         best_dice = best_dice * weights['dice']
-        print("Pixel accuracy: {:.2f}".format(best_pixel_acc))
+        print("Pixel accuracy: {:.2f} %".format(best_pixel_acc*100))
         best_pixel_acc = best_pixel_acc * weights['pixel_acc']
 
         print()
         print("Class Scores:")
         for cls, score in sorted(class_scoresM.items(), key=lambda x: x[1], reverse=True):
-            print(f" - {cls}: {score:.2f}")
-        print(f"\nFinal Class: {final_classM} with score: {final_scoreM:.2f}")
+            print(f" - {cls}: {score*100:.2f} %")
+        print(f"\nFinal Class: {final_classM} with score: {final_scoreM*100:.2f} %")
         print("Real Class:", real_class)
         print('\n----------------------------------------\n')
 
@@ -456,7 +514,11 @@ def differences(view=False, viewMetrics=False):
             
     # Visualize the binary classification metrics
     if viewMetrics == True:
-        plot_metrics(true_positive, true_negative, false_positive, false_negative)
+        # Plot the binary metrics
+        plot_binary_metrics(true_positive, true_negative, false_positive, false_negative)
+
+        # Plot the multiclass metrics
+        plot_multiclass_metrics(classes, true_positiveM, true_negativeM, false_positiveM, false_negativeM)
         
     # Calculate the final accuracy
     accuracyM = total_correctM / total_images
