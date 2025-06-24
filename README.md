@@ -114,3 +114,12 @@ mode = "train"       # Train the GAN model
 mode = "generate"    # Generate images using the trained model
 mode = "differences" # Classify test images using the generated images
 ```
+### Classification Parameters
+
+In `differences` mode it is possibile to set the `view` parameter to `True` to visualize the classification results for each test image, or `False` to not.
+It is also possible to set the `viewMetrics` parameter to `True` to visualize the metrics at the end of the classification process, or `False` to not.
+
+```python
+differences(view=True, viewMetrics=True)
+```
+

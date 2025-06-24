@@ -3,17 +3,6 @@ from generate import generate
 from load_images import load_images
 from differences import differences
 
-# TODO: 
-# 01. Load and preprocess the dataset images (DONE)
-# 02. Create the generative and discriminative model (DONE)
-# 03. Train the GAN (DONE)
-# 04. Generate images using the trained model (DONE)
-# 05. Load the test images (DONE)
-# 06. Preprocess the test images (DONE)
-# 07. Compare generated images with the test images (DONE)
-# 08. Classify the generated images using the model trained in the previous task (DONE)
-# 09. Evaluate the classification accuracy (DONE)
-
 # Select the mode of operation
 
 #mode = 'train'
@@ -52,8 +41,11 @@ if __name__ == "__main__":
 
   elif mode == 'differences':
     # ---------------------- Compare generated images with the test images to obtain the accuracy ----------------------
-  
-    accuracyM, accuracyB = differences(view=False, viewMetrics=True)
+
+    # Set view to True to visualize the classification for each image
+    # Set viewMetrics to True to visualize the metrics at the end
+
+    accuracyM, accuracyB = differences(view=True, viewMetrics=True)
     print("Final Binary Accuracy: ", accuracyB*100, "%")
     print("Final Multi-Class Accuracy: ", accuracyM*100, "%")
 
